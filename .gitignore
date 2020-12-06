@@ -1,0 +1,13 @@
+.idea
+.code
+.vscode
+*.iml
+node_modules
+.env
+
+/dataset
+/test
+/test.txt
+/sql
+/labels
+/steps.md
