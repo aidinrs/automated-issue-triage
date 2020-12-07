@@ -52,3 +52,8 @@ CREATE TABLE issues(
   FOREIGN KEY (repo_id) REFERENCES repositories(id),
   FOREIGN KEY (user_id) REFERENCES developers(id)
 ); 
+
+CREATE TABLE words(
+  word TEXT PRIMARY KEY,
+  vector TEXT
+); 

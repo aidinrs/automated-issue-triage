@@ -22,9 +22,12 @@ async function concatRawDataset(pg) {
 
       try {
         const regs = [
+          /^\n/, // remove empty lines
           /--- End of stack trace from previous location where exception was thrown ---/, //remove
           /--- End of inner exception stack trace ---/, //remove
 
+          /(?:[\uD83C\uDF00-\uD83D\uDDFF]|[\uD83E\uDD00-\uD83E\uDDFF]|[\uD83D\uDE00-\uD83D\uDE4F]|[\uD83D\uDE80-\uD83D\uDEFF]|[\u2600-\u26FF]\uFE0F?|[\u2700-\u27BF]\uFE0F?|\u24C2\uFE0F?|[\uD83C\uDDE6-\uD83C\uDDFF]{1,2}|[\uD83C\uDD70\uD83C\uDD71\uD83C\uDD7E\uD83C\uDD7F\uD83C\uDD8E\uD83C\uDD91-\uD83C\uDD9A]\uFE0F?|[\u0023\u002A\u0030-\u0039]\uFE0F?\u20E3|[\u2194-\u2199\u21A9-\u21AA]\uFE0F?|[\u2B05-\u2B07\u2B1B\u2B1C\u2B50\u2B55]\uFE0F?|[\u2934\u2935]\uFE0F?|[\u3030\u303D]\uFE0F?|[\u3297\u3299]\uFE0F?|[\uD83C\uDE01\uD83C\uDE02\uD83C\uDE1A\uD83C\uDE2F\uD83C\uDE32-\uD83C\uDE3A\uD83C\uDE50\uD83C\uDE51]\uFE0F?|[\u203C\u2049]\uFE0F?|[\u25AA\u25AB\u25B6\u25C0\u25FB-\u25FE]\uFE0F?|[\u00A9\u00AE]\uFE0F?|[\u2122\u2139]\uFE0F?|\uD83C\uDC04\uFE0F?|\uD83C\uDCCF\uFE0F?|[\u231A\u231B\u2328\u23CF\u23E9-\u23F3\u23F8-\u23FA]\uFE0F?)/, //remove emojis
+          /([\uE000-\uF8FF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDDFF])/, // remove emojis
           // exceptions
           /Caused by:.+\n(^\s+at .*\n){0,}\s+\.\.\..+/,
           /Caused by:.+\n(^\s+at .*\n){1,}/,
@@ -72,7 +75,7 @@ async function concatRawDataset(pg) {
           /(npm ERR!.*\n){1,}/, // node js error log
           /(gyp ERR!.*\n){1,}/, // node js error log
           /(npm (http|verb|info|INFO|Info|warn|WARN|Warn|uninstall|install|help).*\n){2,}/, // node js log
-
+          /^(.*\[.+\].*\n){3,}/,
           /^Uncaught Error:.+/, // replace with nothing
 
           /(^.*[\d]{1,2}:[\d]{1,2}:[\d]{1,2}.*\n){3,}/, //replace with log line
@@ -80,28 +83,56 @@ async function concatRawDataset(pg) {
           // /(\d{2,4}\/\d{2,4}\/\d{2,4}.+\n){3,}/, //replace with log line
           /(^(info|debug|warn|error|trace):.*\n){2,}/, //replace with log line
           /(^(VERB|verb|Verbose|Verbose|VERBOSE|info|Info|INFO|debug|Debug|DEBUG|warn|Warn|WARN|error|ERROR|Error|trace|Trace|TRACE).*\n){3,}/, //replace with log line
+
           /(^\d{1,} .+\n){10,}/, // remove
           /(\[(VERB|verb|Verbose|Verbose|VERBOSE|info|Info|INFO|debug|Debug|DEBUG|warn|Warn|WARN|error|ERROR|Error|trace|Trace|TRACE|WArning|warning|WARNING|DBUG|EROR)\].*\n)/, // remove
 
           // cmd
+          /^root@.+\n/, // remove
+          /^PS .+\n/, // remove
+          /^\$.+\n/, // remove
           /(mysql>.+;\n|mysql>.+\n(->.+\n){1,}.+;)/, // sql
           /postgres=#.+;\n/, // sql
           /^Query OK,.+\n/, // sql
           /^[\d]{1,} rows in set.+\n/, // sql
 
           // tables
-          /\+---.+---\+/, // replace with nothing
-          /\|.*\|/, // replace with nothing
-          /---.+---/, // replace with nothing
+          /\+---.+---\+/, // remove
+          /\|.*\|/, // remove
+          /---.+---/, // remove
 
           // comments
-          /\/\/ .*/, // replace with nothing
-          /\/\* .+ \*\//, // replace with nothing
-          /\/\*.+\*\//, // replace with nothing
-          /\/\*.+\//, // replace with nothing
-          /^##.*/, // replace with nothing
+          /\/\/ .*/, // remove, after file path
+          /\/\* .+ \*\//, // remove
+          /\/\*.+\*\//, // remove
+          /\/\*.+\//, // remove
+          /^##.*/, // remove
           /\*\\.*\n/, // remove
-          /\/\*(.*\n){1,}.*\*\//, // remove
+          /\/\*.*?\*\//, // remove check**
+          /\/\*(.*\n){1,200}.*\*\//, // remove
+
+          // gibber
+          /^(.+=()?.+\n){3,}/, // remove
+          /^(.{0,40}:()?.{0,50}\n){3,}/, // remove
+
+          /```.*?```/, // remove
+          /`.*?`/, // remove
+          /```(.*\n){0,200}?.*```/, // remove
+          /`(.*\n){0,200}?.*`/, // remove
+          /\{.*?\}/, // remove
+          /\{(.*\n){0,200}?.*\}/, // remove
+          /\[.*?\]/, // remove
+          /\[(.*\n){0,200}?.*\]/, // remove
+          /".*?"/, //remove
+          /"(.*\n){0,200}?.*"\]"/, // remove
+
+          // tags
+          /<\?php.+\?>/, // remove
+          /<\?.+\?>>/, // remove
+          /<\?= .+ ?>/, // tags
+
+          ///(^.+\.go.*\n){3,}/, //apply after uri reg exp
+          /<\?php .+ ?>/,
 
           // uri
           /(http|https|ftp):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/, //url
@@ -118,8 +149,8 @@ async function concatRawDataset(pg) {
           /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/, // IP_TOKEN
 
           // semver
-          /(\S+)@(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?/, //package with semver ssh@1.2.5
-          /(\S+)@(~|\^|=|>|<|>=|<=)(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?/, //package with semver ssh@1.2.5
+          /(\S+)@[vV]?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?/, //package with semver ssh@1.2.5
+          /(\S+)@[vV]?(~|\^|=|>|<|>=|<=)(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?/, //package with semver ssh@1.2.5
           /(v|V){0,1}(~|\^|=|>|<|>=|<=)?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?/, //package with semver ~1.2.5
           /((v|V)\d{1,10}(\.\d{1,10})?)/,
 
@@ -345,29 +376,54 @@ async function concatRawDataset(pg) {
           /\d{1,2}\/(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\/\d{4}\s+[0-2]\d:[0-5]\d:[0-5]\d/,
           /\d{1,2}\/(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\/\d{4}::[0-2]\d:[0-5]\d:[0-5]\d/,
 
-          // tags
-          /<\?php.+\?>/, // remove
-          /<\?.+\?>>/, // remove
-          /<\?= .+ ?>/, // tags
+          // mentions
+          /\w+@\w+/, // first remove gibber
+          /@(param|line|\w+\.\w{2,7})/, // first remove gibber
+          /@@\w+/, // first remove gibber
+          /@[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}/, // user mention from https://github.com/shinnn/github-username-regex
 
-          /(^.+\.go.*\n){3,}/, //apply after uri reg exp
-          /<\?php .+ ?>/,
+          //ipv6
+          ///(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))/,
+
+          // date
+          /\d{4}-[0-3]?\d-[0-3]?\d/,
+          /[0-3]?\d-[0-3]?\d-\d{4}/,
+          /\d{4}\/[0-3]?\d\/[0-3]?\d/,
+          /[0-3]?\d\/[0-3]?\d\/\d{4}/,
+          /\d{4}\.[0-3]?\d\.[0-3]?\d/,
+          /[0-3]?\d\.[0-3]?\d\.\d{4}/,
+          /\d{4}_[0-3]?\d_[0-3]?\d/,
+          /[0-3]?\d_[0-3]?\d_\d{4}/,
+          /\d{4} [0-3]?\d [0-3]?\d/,
+          /[0-3]?\d [0-3]?\d \d{4}/,
+          /\d{4}[0-3]?\d[0-3]?\d/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4}/,
+          /\d{1,2}\/(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\/\d{4}/,
+
+          // time
+          /[0-2]\d:[0-5]\d:[0-5]\d[+-]\d{1,7}/,
+          /[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm]/,
+          /[0-2]\d:[0-5]\d:[0-5]\d\.\d+ (gmt|utc)/,
+          /[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
+          /[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm]/,
+          /[0-2]\d:[0-5]\d:[0-5]\d/,
+
+          // remaining stack traces
+          /^(.+.(java|php|go|js|vue|jsx|cpp|scala|py|groovy|css|asp|aspx|rb|cs|cc|clj|hs|es6|jsm|swift):.+\n){2,}/, // stack trace
+
+          // gibber
+          /([a-zA-Z0-9]+[!"#\$%&\\'\(\)\*\+,-\.\/:;<=>\?@\[\]\^_\{\|\}~`]+)+[a-zA-Z0-9]*/, // remove all gibber
         ]
 
         let a = [
-          " @ shareChanges.js:30",
           "org.opensolaris.opengrok.index.IndexDatabase.indexDown(IndexDatabase.java:561)",
-          "PS /home/chythu>",
-          "$",
-          "root@local:",
           // language detection
-          // #tags
           // @mentions
-          // remove emojis
           // Removing Accented Characters (résumé)
           // Expanding Contractions
           // named entity recognition
-          // common time formats
           // check with or wihour hypehn from word embeddings database
           // 2- remove everythin in brackets [.+]
           // 3- replace --aaa-bbb with a special token -> COMMAND_FLAG, CONFIG
@@ -377,11 +433,8 @@ async function concatRawDataset(pg) {
           // 8- replace nopods=true or --net=mynet like phrases with token -> CONFIG
           // 9- replace nopods:true and "nopods: true" like phrases to token -> CONFIG
           // 10- replace rancher-ha.sh or /etc/aa/rancher-ha.sh with -> FILE_NAME
-          // 11- replace 1.1.0, v1.1.0, v1.1, V2 with token -> VERSION_IDENTIFIER
           // 12- replace sync_error_idc with token -> identifier
-          // 13- replace #51234 with token -> ISSUE_LINK
           // 14- should replace functoin calls ? build_connect_url() -> FUNCTION_CALL
-          // 15- replace URIs with token -> URI
           // 16- replace LoginByUsername or loginByUsernameunit (camel case) -> IDENTIFIER
           // PACKAGE
           // COMMAND
