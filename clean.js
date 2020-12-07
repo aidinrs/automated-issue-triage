@@ -83,6 +83,7 @@ async function concatRawDataset(pg) {
           /(^\d{1,} .+\n){10,}/, // remove
           /(\[(VERB|verb|Verbose|Verbose|VERBOSE|info|Info|INFO|debug|Debug|DEBUG|warn|Warn|WARN|error|ERROR|Error|trace|Trace|TRACE|WArning|warning|WARNING|DBUG|EROR)\].*\n)/, // remove
 
+          // cmd
           /(mysql>.+;\n|mysql>.+\n(->.+\n){1,}.+;)/, // sql
           /postgres=#.+;\n/, // sql
           /^Query OK,.+\n/, // sql
@@ -99,6 +100,8 @@ async function concatRawDataset(pg) {
           /\/\*.+\*\//, // replace with nothing
           /\/\*.+\//, // replace with nothing
           /^##.*/, // replace with nothing
+          /\*\\.*\n/, // remove
+          /\/\*(.*\n){1,}.*\*\//, // remove
 
           // uri
           /(http|https|ftp):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/, //url
@@ -127,68 +130,220 @@ async function concatRawDataset(pg) {
           /#\d{2,10}/, // replace with nothing
 
           // date time
-          /\d{4}-[0-3]\d-[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/, // ISO
-          /\d{4}-[0-3]\d-[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-]\d{1,7}|Z)/, // ISO
-          /\d{4}-[0-3]\d-[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
-          /\d{4}-[0-3]\d-[0-3]\d(T| )[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
-          /\d{4}-[0-3]\d-[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d[+-]\d{1,7}/,
-          /\d{4}-[0-3]\d-[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
-          /\d{4}-[0-3]\d-[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d/,
+          /\d{4}-[0-3]?\d-[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4}-[0-3]?\d-[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-]\d{1,7}|Z)/,
+          /\d{4}-[0-3]?\d-[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4}-[0-3]?\d-[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4}-[0-3]?\d-[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d[+-]\d{1,7}/,
+          /\d{4}-[0-3]?\d-[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /\d{4}-[0-3]?\d-[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm]/,
+          /\d{4}-[0-3]?\d-[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
+          /\d{4}-[0-3]?\d-[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /\d{4}-[0-3]?\d-[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm]/,
+          /\d{4}-[0-3]?\d-[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d/,
 
-          /\d{4}\/[0-3]\d\/[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
-          /\d{4}\/[0-3]\d\/[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-]\d{1,7}|Z)/,
-          /\d{4}\/[0-3]\d\/[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
-          /\d{4}\/[0-3]\d\/[0-3]\d(T| )[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
-          /\d{4}\/[0-3]\d\/[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d[+-]\d{1,7}/,
-          /\d{4}\/[0-3]\d\/[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
-          /\d{4}\/[0-3]\d\/[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d/,
+          /[0-3]?\d-[0-3]?\d-\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
+          /[0-3]?\d-[0-3]?\d-\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-]\d{1,7}|Z)/,
+          /[0-3]?\d-[0-3]?\d-\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /[0-3]?\d-[0-3]?\d-\d{4}(T| |_|-)[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /[0-3]?\d-[0-3]?\d-\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d[+-]\d{1,7}/,
+          /[0-3]?\d-[0-3]?\d-\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /[0-3]?\d-[0-3]?\d-\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm]/,
+          /[0-3]?\d-[0-3]?\d-\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
+          /[0-3]?\d-[0-3]?\d-\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /[0-3]?\d-[0-3]?\d-\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm]/,
+          /[0-3]?\d-[0-3]?\d-\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d/,
 
-          /\d{4}\.[0-3]\d\.[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
-          /\d{4}\.[0-3]\d\.[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-]\d{1,7}|Z)/,
-          /\d{4}\.[0-3]\d\.[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
-          /\d{4}\.[0-3]\d\.[0-3]\d(T| )[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
-          /\d{4}\.[0-3]\d\.[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d[+-]\d{1,7}/,
-          /\d{4}\.[0-3]\d\.[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
-          /\d{4}\.[0-3]\d\.[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d/,
+          /\d{4}\/[0-3]?\d\/[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4}\/[0-3]?\d\/[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-]\d{1,7}|Z)/,
+          /\d{4}\/[0-3]?\d\/[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4}\/[0-3]?\d\/[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4}\/[0-3]?\d\/[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d[+-]\d{1,7}/,
+          /\d{4}\/[0-3]?\d\/[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /\d{4}\/[0-3]?\d\/[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm]/,
+          /\d{4}\/[0-3]?\d\/[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
+          /\d{4}\/[0-3]?\d\/[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /\d{4}\/[0-3]?\d\/[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm]/,
+          /\d{4}\/[0-3]?\d\/[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d/,
 
-          /\d{4}_[0-3]\d_[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
-          /\d{4}_[0-3]\d_[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-]\d{1,7}|Z)/,
-          /\d{4}_[0-3]\d_[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
-          /\d{4}_[0-3]\d_[0-3]\d(T| )[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
-          /\d{4}_[0-3]\d_[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
-          /\d{4}_[0-3]\d_[0-3]\d(T| )[0-2]\d:[0-5]\d:[0-5]\d/,
+          /[0-3]?\d\/[0-3]?\d\/\d{4}(T| |_)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
+          /[0-3]?\d\/[0-3]?\d\/\d{4}(T| |_)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-]\d{1,7}|Z)/,
+          /[0-3]?\d\/[0-3]?\d\/\d{4}(T| |_)[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /[0-3]?\d\/[0-3]?\d\/\d{4}(T| |_)[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /[0-3]?\d\/[0-3]?\d\/\d{4}(T| |_)[0-2]\d:[0-5]\d:[0-5]\d[+-]\d{1,7}/,
+          /[0-3]?\d\/[0-3]?\d\/\d{4}(T| |_)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /[0-3]?\d\/[0-3]?\d\/\d{4}(T| |_)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm]/,
+          /[0-3]?\d\/[0-3]?\d\/\d{4}(T| |_)[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
+          /[0-3]?\d\/[0-3]?\d\/\d{4}(T| |_)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /[0-3]?\d\/[0-3]?\d\/\d{4}(T| |_)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm]/,
+          /[0-3]?\d\/[0-3]?\d\/\d{4}(T| |_)[0-2]\d:[0-5]\d:[0-5]\d/,
 
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun) (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} [0-2]\d:[0-5]\d:[0-5]\d \d{4}/, // case insensitive, use i flag
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun) (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt|\S{1,5}) \d{4}/, // case insensitive, use i flag
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun) (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} [0-2]\d:[0-5]\d:[0-5]\d\.\d{1,7} \d{4}/,
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun) (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} [0-2]\d:[0-5]\d:[0-5]\d/, // case insensitive, use i flag
+          /\d{4}\.[0-3]?\d\.[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4}\.[0-3]?\d\.[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-]\d{1,7}|Z)/,
+          /\d{4}\.[0-3]?\d\.[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4}\.[0-3]?\d\.[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4}\.[0-3]?\d\.[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d[+-]\d{1,7}/,
+          /\d{4}\.[0-3]?\d\.[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /\d{4}\.[0-3]?\d\.[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm]/,
+          /\d{4}\.[0-3]?\d\.[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
+          /\d{4}\.[0-3]?\d\.[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /\d{4}\.[0-3]?\d\.[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm]/,
+          /\d{4}\.[0-3]?\d\.[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d/,
 
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun) (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d GMT[+-]\d{1,7} \(\S+\)/,
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun) (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d GMT[+-]\d{1,7} \(.+\)/,
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun) (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d GMT[+-]\d{1,7}/,
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun) (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d GMT \d{1,7} \(\S+\)/,
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun) (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d GMT \d{1,7} \(.+\)/,
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun) (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d/,
+          /[0-3]?\d\.[0-3]?\d\.\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
+          /[0-3]?\d\.[0-3]?\d\.\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-]\d{1,7}|Z)/,
+          /[0-3]?\d\.[0-3]?\d\.\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /[0-3]?\d\.[0-3]?\d\.\d{4}(T| |_|-)[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /[0-3]?\d\.[0-3]?\d\.\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d[+-]\d{1,7}/,
+          /[0-3]?\d\.[0-3]?\d\.\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /[0-3]?\d\.[0-3]?\d\.\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm]/,
+          /[0-3]?\d\.[0-3]?\d\.\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
+          /[0-3]?\d\.[0-3]?\d\.\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /[0-3]?\d\.[0-3]?\d\.\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm]/,
+          /[0-3]?\d\.[0-3]?\d\.\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d/,
 
-          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d GMT[+-]\d{1,7} \(\S+\)/,
-          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d GMT[+-]\d{1,7} \(.+\)/,
-          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d GMT[+-]\d{1,7}/,
-          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d GMT \d{1,7} \(\S+\)/,
-          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d GMT \d{1,7} \(.+\)/,
-          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d/,
+          /\d{4}_[0-3]?\d_[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4}_[0-3]?\d_[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-]\d{1,7}|Z)/,
+          /\d{4}_[0-3]?\d_[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4}_[0-3]?\d_[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4}_[0-3]?\d_[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d[+-]\d{1,7}/,
+          /\d{4}_[0-3]?\d_[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /\d{4}_[0-3]?\d_[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm]/,
+          /\d{4}_[0-3]?\d_[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
+          /\d{4}_[0-3]?\d_[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /\d{4}_[0-3]?\d_[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm]/,
+          /\d{4}_[0-3]?\d_[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d/,
+
+          /[0-3]?\d_[0-3]?\d_\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
+          /[0-3]?\d_[0-3]?\d_\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-]\d{1,7}|Z)/,
+          /[0-3]?\d_[0-3]?\d_\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /[0-3]?\d_[0-3]?\d_\d{4}(T| |_|-)[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /[0-3]?\d_[0-3]?\d_\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d[+-]\d{1,7}/,
+          /[0-3]?\d_[0-3]?\d_\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /[0-3]?\d_[0-3]?\d_\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm]/,
+          /[0-3]?\d_[0-3]?\d_\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
+          /[0-3]?\d_[0-3]?\d_\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /[0-3]?\d_[0-3]?\d_\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm]/,
+          /[0-3]?\d_[0-3]?\d_\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d/,
+
+          /\d{4} [0-3]?\d [0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4} [0-3]?\d [0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-]\d{1,7}|Z)/,
+          /\d{4} [0-3]?\d [0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4} [0-3]?\d [0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4} [0-3]?\d [0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d[+-]\d{1,7}/,
+          /\d{4} [0-3]?\d [0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /\d{4} [0-3]?\d [0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm]/,
+          /\d{4} [0-3]?\d [0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
+          /\d{4} [0-3]?\d [0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /\d{4} [0-3]?\d [0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm]/,
+          /\d{4} [0-3]?\d [0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d/,
+
+          /[0-3]?\d [0-3]?\d \d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
+          /[0-3]?\d [0-3]?\d \d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-]\d{1,7}|Z)/,
+          /[0-3]?\d [0-3]?\d \d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /[0-3]?\d [0-3]?\d \d{4}(T| |_|-)[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /[0-3]?\d [0-3]?\d \d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d[+-]\d{1,7}/,
+          /[0-3]?\d [0-3]?\d \d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /[0-3]?\d [0-3]?\d \d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm]/,
+          /[0-3]?\d [0-3]?\d \d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
+          /[0-3]?\d [0-3]?\d \d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /[0-3]?\d [0-3]?\d \d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm]/,
+          /[0-3]?\d [0-3]?\d \d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d/,
+
+          /\d{4}[0-3]?\d[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4}[0-3]?\d[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-]\d{1,7}|Z)/,
+          /\d{4}[0-3]?\d[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4}[0-3]?\d[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          /\d{4}[0-3]?\d[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d[+-]\d{1,7}/,
+          /\d{4}[0-3]?\d[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /\d{4}[0-3]?\d[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm]/,
+          /\d{4}[0-3]?\d[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
+          /\d{4}[0-3]?\d[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          /\d{4}[0-3]?\d[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm]/,
+          /\d{4}[0-3]?\d[0-3]?\d(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d/,
+
+          // /[0-3]?\d[0-3]?\d\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/,
+          // /[0-3]?\d[0-3]?\d\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-]\d{1,7}|Z)/,
+          // /[0-3]?\d[0-3]?\d\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          // /[0-3]?\d[0-3]?\d\d{4}(T| |_|-)[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/,
+          // /[0-3]?\d[0-3]?\d\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d[+-]\d{1,7}/,
+          // /[0-3]?\d[0-3]?\d\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          // /[0-3]?\d[0-3]?\d\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+( )?[AaPp][Mm]/,
+          // /[0-3]?\d[0-3]?\d\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d\.\d+/,
+          // /[0-3]?\d[0-3]?\d\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm] [+-][0-2]\d:[0-5]\d/,
+          // /[0-3]?\d[0-3]?\d\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm]/,
+          // /[0-3]?\d[0-3]?\d\d{4}(T| |_|-)[0-2]\d:[0-5]\d:[0-5]\d/,
+
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)? (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} [0-2]\d:[0-5]\d:[0-5]\d \d{4}/, // case insensitive, use i flag
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)? (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt|\S{1,5}) \d{4}/, // case insensitive, use i flag
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)? (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} [0-2]\d:[0-5]\d:[0-5]\d\.\d{1,7} \d{4}/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)? (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} [0-2]\d:[0-5]\d:[0-5]\d [ap][m]/, // case insensitive, use i flag
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)? (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} [0-2]\d:[0-5]\d:[0-5]\d/, // case insensitive, use i flag
+
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)? (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt)[+-]\d{1,7} \(\S+\)/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)? (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt)[+-]\d{1,7} \(.+\)/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)? (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt)[+-]\d{1,7}/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)? (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt) \d{1,7} \(\S+\)/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)? (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt) \d{1,7} \(.+\)/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)? (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d [ap][m]/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)? (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4} [0-2]\d:[0-5]\d:[0-5]\d/,
+
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4}(,)? [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt)[+-]\d{1,7} \(\S+\)/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4}(,)? [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt)[+-]\d{1,7} \(.+\)/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4}(,)? [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt)[+-]\d{1,7}/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4}(,)? [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt) \d{1,7} \(\S+\)/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4}(,)? [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt) \d{1,7} \(.+\)/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4}(,)? [0-2]\d:[0-5]\d:[0-5]\d [ap][m]/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2} \d{4}(,)? [0-2]\d:[0-5]\d:[0-5]\d/,
+
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2}\s+\d{4} - [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt)[+-]\d{1,7} \(\S+\)/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2}\s+\d{4} - [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt)[+-]\d{1,7} \(.+\)/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2}\s+\d{4} - [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt)[+-]\d{1,7}/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2}\s+\d{4} - [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt) \d{1,7} \(\S+\)/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2}\s+\d{4} - [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt) \d{1,7} \(.+\)/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2}\s+\d{4} - [0-2]\d:[0-5]\d:[0-5]\d [ap][m]/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2}\s+\d{4} - [0-2]\d:[0-5]\d:[0-5]\d/,
 
           /\d{1,2}\/(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\/\d{4}:[0-2]\d:[0-5]\d:[0-5]\d [+-]\d{0,7}/,
 
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun),\s+\d{1,2}\s+(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?) \d{4} [0-2]\d:[0-5]\d:[0-5]\d [+-]\d{1,7} \(\S+\)/,
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun),\s+\d{1,2}\s+(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?) \d{4} [0-2]\d:[0-5]\d:[0-5]\d [+-]\d{1,7} \(.+\)/,
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun),\s+\d{1,2}\s+(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?) \d{4} [0-2]\d:[0-5]\d:[0-5]\d [+-]\d{1,7}/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)?,\s+\d{1,2}\s+(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?) \d{4} [0-2]\d:[0-5]\d:[0-5]\d [+-]\d{1,7} \(\S+\)/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)?,\s+\d{1,2}\s+(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?) \d{4} [0-2]\d:[0-5]\d:[0-5]\d [+-]\d{1,7} \(.+\)/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)?,\s+\d{1,2}\s+(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?) \d{4} [0-2]\d:[0-5]\d:[0-5]\d [+-]\d{1,7}/,
 
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun),\s+\d{1,2}\s+(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?) \d{4} [0-2]\d:[0-5]\d:[0-5]\d GMT[+-]\d{1,7} \(\S+\)/,
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun),\s+\d{1,2}\s+(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?) \d{4} [0-2]\d:[0-5]\d:[0-5]\d GMT[+-]\d{1,7} \(.+\)/,
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun),\s+\d{1,2}\s+(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?) \d{4} [0-2]\d:[0-5]\d:[0-5]\d GMT[+-]\d{1,7}/,
-          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun),\s+\d{1,2}\s+(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?) \d{4} [0-2]\d:[0-5]\d:[0-5]\d GMT/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)?,\s+\d{1,2}\s+(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?) \d{4} [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt)[+-]\d{1,7} \(\S+\)/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)?,\s+\d{1,2}\s+(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?) \d{4} [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt)[+-]\d{1,7} \(.+\)/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)?,\s+\d{1,2}\s+(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?) \d{4} [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt)[+-]\d{1,7}/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)?,\s+\d{1,2}\s+(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?) \d{4} [0-2]\d:[0-5]\d:[0-5]\d (utc|gmt)/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)?,\s+\d{1,2}\s+(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?) \d{4} [0-2]\d:[0-5]\d:[0-5]\d [ap][m]/,
 
-          /\d{1,2}\/\d{1,2}\/\d{1,2}(T| )[0-2]\d:[0-5]\d:[0-5]\d:\d{1,3} \w{1,5}/, //
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2}(,)? [0-2]\d:[0-5]\d:[0-5]\d [1-2]\d{3}( GMT)?/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2}(,)? [0-2]\d:[0-5]\d:[0-5]\d [1-2]\d{3}( UTC)?/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2}(,)? [0-2]\d:[0-5]\d:[0-5]\d\.\d{1,7} \d{4}/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2}(,)? [0-2]\d:[0-5]\d:[0-5]\d\.\d{1,7}/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2}(,)? [0-2]\d:[0-5]\d:[0-5]\d \w{2,4} \d{4}/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2}(,)? [0-2]\d:[0-5]\d:[0-5]\d [ap][m]/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2}(,)? [0-2]\d:[0-5]\d:[0-5]\d/,
+
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)?, (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2},\s+\d{4},\s+[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm]/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)?, (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2},\s+\d{4}\s+[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm]/,
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)?, (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2},\s+\d{4}\s+[0-2]\d:[0-5]\d:[0-5]\d/,
+
+          /(mon|tue(s)?|wed(nes)?|Thu(r)?(s)?|fri|sat(ur)?|sun)(day)? \d{1,2} (Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{4}\s+[0-2]\d:[0-5]\d:[0-5]\d( )?[AaPp][Mm] \w{1,5}/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2}, \d{4}\s+[0-2]\d:[0-5]\d:[0-5]\d( )?[ap][m]/,
+          /(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2},\s+\d{4}\s+[0-2]\d:[0-5]\d:[0-5]\d/,
+          /\d{1,2}-(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)-\d{4}\s+[0-2]\d:[0-5]\d:[0-5]\d \w+\/\w+/,
+
+          /\d{1,2}-(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)-\d{4}\s+[0-2]\d:[0-5]\d:[0-5]\d\.\d{1,7}/,
+          /\d{1,2}-(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)-\d{4}\s+[0-2]\d:[0-5]\d:[0-5]\d (utc|gmt)/,
+          /\d{1,2}-(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)-\d{4}\s+[0-2]\d:[0-5]\d:[0-5]\d [+-]\d{0,7}/,
+          /\d{1,2}-(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)-\d{4}\s+[0-2]\d:[0-5]\d:[0-5]\d/,
+          /\d{1,2}-(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)-\d{4}::[0-2]\d:[0-5]\d:[0-5]\d/,
+
+          /\d{1,2}\/(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\/\d{4}\s+[0-2]\d:[0-5]\d:[0-5]\d\.\d{1,7}/,
+          /\d{1,2}\/(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\/\d{4}\s+[0-2]\d:[0-5]\d:[0-5]\d (utc|gmt)/,
+          /\d{1,2}\/(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\/\d{4}\s+[0-2]\d:[0-5]\d:[0-5]\d [+-]\d{0,7}/,
+          /\d{1,2}\/(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\/\d{4}\s+[0-2]\d:[0-5]\d:[0-5]\d/,
+          /\d{1,2}\/(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\/\d{4}::[0-2]\d:[0-5]\d:[0-5]\d/,
 
           // tags
           /<\?php.+\?>/, // remove
