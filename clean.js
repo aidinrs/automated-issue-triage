@@ -22,12 +22,111 @@ async function concatRawDataset(pg) {
 
       try {
         const regs = [
-          /^\n/, // remove empty lines
-          /--- End of stack trace from previous location where exception was thrown ---/, //remove
-          /--- End of inner exception stack trace ---/, //remove
+          [/^\n/g, ""], // remove empty lines
+          [/^.*(├|└|─).*\n/g, ""], // remove dependency trees
+          [
+            /--- End of stack trace from previous location where exception was thrown ---/gi,
+            "",
+          ], //remove
+          [/--- End of inner exception stack trace ---/gi, ""], //remove
+          [/^\n/g, ""], // remove empty lines again
 
-          /(?:[\uD83C\uDF00-\uD83D\uDDFF]|[\uD83E\uDD00-\uD83E\uDDFF]|[\uD83D\uDE00-\uD83D\uDE4F]|[\uD83D\uDE80-\uD83D\uDEFF]|[\u2600-\u26FF]\uFE0F?|[\u2700-\u27BF]\uFE0F?|\u24C2\uFE0F?|[\uD83C\uDDE6-\uD83C\uDDFF]{1,2}|[\uD83C\uDD70\uD83C\uDD71\uD83C\uDD7E\uD83C\uDD7F\uD83C\uDD8E\uD83C\uDD91-\uD83C\uDD9A]\uFE0F?|[\u0023\u002A\u0030-\u0039]\uFE0F?\u20E3|[\u2194-\u2199\u21A9-\u21AA]\uFE0F?|[\u2B05-\u2B07\u2B1B\u2B1C\u2B50\u2B55]\uFE0F?|[\u2934\u2935]\uFE0F?|[\u3030\u303D]\uFE0F?|[\u3297\u3299]\uFE0F?|[\uD83C\uDE01\uD83C\uDE02\uD83C\uDE1A\uD83C\uDE2F\uD83C\uDE32-\uD83C\uDE3A\uD83C\uDE50\uD83C\uDE51]\uFE0F?|[\u203C\u2049]\uFE0F?|[\u25AA\u25AB\u25B6\u25C0\u25FB-\u25FE]\uFE0F?|[\u00A9\u00AE]\uFE0F?|[\u2122\u2139]\uFE0F?|\uD83C\uDC04\uFE0F?|\uD83C\uDCCF\uFE0F?|[\u231A\u231B\u2328\u23CF\u23E9-\u23F3\u23F8-\u23FA]\uFE0F?)/, //remove emojis
-          /([\uE000-\uF8FF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDDFF])/, // remove emojis
+          [
+            /(?:[\uD83C\uDF00-\uD83D\uDDFF]|[\uD83E\uDD00-\uD83E\uDDFF]|[\uD83D\uDE00-\uD83D\uDE4F]|[\uD83D\uDE80-\uD83D\uDEFF]|[\u2600-\u26FF]\uFE0F?|[\u2700-\u27BF]\uFE0F?|\u24C2\uFE0F?|[\uD83C\uDDE6-\uD83C\uDDFF]{1,2}|[\uD83C\uDD70\uD83C\uDD71\uD83C\uDD7E\uD83C\uDD7F\uD83C\uDD8E\uD83C\uDD91-\uD83C\uDD9A]\uFE0F?|[\u0023\u002A\u0030-\u0039]\uFE0F?\u20E3|[\u2194-\u2199\u21A9-\u21AA]\uFE0F?|[\u2B05-\u2B07\u2B1B\u2B1C\u2B50\u2B55]\uFE0F?|[\u2934\u2935]\uFE0F?|[\u3030\u303D]\uFE0F?|[\u3297\u3299]\uFE0F?|[\uD83C\uDE01\uD83C\uDE02\uD83C\uDE1A\uD83C\uDE2F\uD83C\uDE32-\uD83C\uDE3A\uD83C\uDE50\uD83C\uDE51]\uFE0F?|[\u203C\u2049]\uFE0F?|[\u25AA\u25AB\u25B6\u25C0\u25FB-\u25FE]\uFE0F?|[\u00A9\u00AE]\uFE0F?|[\u2122\u2139]\uFE0F?|\uD83C\uDC04\uFE0F?|\uD83C\uDCCF\uFE0F?|[\u231A\u231B\u2328\u23CF\u23E9-\u23F3\u23F8-\u23FA]\uFE0F?)/,
+            " ",
+          ], // replace with space
+          [
+            /([\uE000-\uF8FF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDDFF])/,
+            " ",
+          ], // replace with space
+          [
+            /([\b\s+]:\)+|[\b\s+]:\(+|[\b\s+]-_-|[\b\s+]=+\)+|[\b\s+]:D|[\b\s+]:'\(|[\b\s+];\)|[\b\s+]:P|[\b\s+]:(\|\\|\/)|[\b\s+]:[Oo])/g,
+            "  ",
+          ], // replace emoticons with double space
+
+          [/^\n/g, ""], // remove empty lines
+
+          // logs
+          [/^.*Error:.+\n(npm ERR!.+\n){1,}/g, ""], // remove, node js error log
+          [/((npm|gyp|node-pre-gyp) ERR!.*\n){1,}/, ""], // remove, node js error log
+          [
+            /((npm|gyp|node-pre-gyp) (http|verb|info|INFO|Info|warn|WARN|Warn|uninstall|install|help).*\n){2,}/gi,
+            "",
+          ], // remove, node js log
+          [/^(.*\[.+\].*\n){3,}/g, ""], // remove logs
+          [/^Uncaught Error:.+/gi, " error message "], // node js error message
+
+          [/(^\[.+\].*\n){2,}/g, ""], // remove
+          [/(^(info|debug|warn|error|trace):.*\n){2,}/gi, ""], // remove
+          [
+            /(^(VERB|verb|Verbose|Verbose|VERBOSE|info|Info|INFO|debug|Debug|DEBUG|warn|Warn|WARN|error|ERROR|Error|trace|Trace|TRACE).*\n){3,}/gi,
+            "",
+          ], //replace with log line
+
+          [/(^\d{1,} .+\n){10,}/g, ""], // remove
+          [
+            /(^\[(VERB|verb|Verbose|Verbose|VERBOSE|info|Info|INFO|debug|Debug|DEBUG|warn|Warn|WARN|error|ERROR|Error|trace|Trace|TRACE|WArning|warning|WARNING|DBUG|EROR)\].*\n)/gi,
+            "",
+          ], // remove
+
+          // cmd
+          [/^root@.+\n/gi, ""], // remove
+          [/^PS .+>.+\n/gi, ""], // remove
+          [
+            /^\$( )?(java|javac|npm|docker|curl|ls|cd|grep|mkdir|php|python|node|mysql|psql|cp|mv|hg|echo|dpkg|apt|sudo|ll|kubectl|touch|git|wget|uname|md5sum|apm|atom|less|head|tail|nvm|systemctl|journalctl|service|aws|terraform|vagrant|youtube|vi|nano|emacs|pwd|ping|trace|cat|make|whoami|lxc|diff|du|df|gunzip|tar|argo|rubocop|gulp|webpack|yarn|dotnet|pip|ruby|cmake|fleet|ssh|scp|bazel|helm|ps|eval|ipconfig|ifconfig|ufw|adb|source|gem|snap|bash|ant|composer|where|locate|date|locale|minikube|rvm|man|conda|brew|virtualenv|export|oc|tsuru|(~)?\.\/.+|(~)?\/.+|.:\\.+).+\n/gi,
+            "",
+          ], // remove popoular commands lines
+          [/(mysql>.+;\n|mysql>.+\n(->.+\n){1,}.+;)/gi, ""], // remove
+          [/postgres=#.+;\n/gi, ""], // remove
+          [/^Query OK,.+\n/g, ""], // remove
+          [/^INSERT \d+ \d+\n/g, ""], // remove
+          [/^[\d]{1,} rows in set.+\n/g, ""], // remove
+          [/\(\d+ rows\)/g, ""], // remove
+
+          [/^\n/g, ""], // remove empty lines
+
+          // tables
+          [/(\+|\|)---.+---(\+|\|)/g, ""], // remove
+          [/(\+|\|)===.+===(\+|\|)/g, ""], // remove
+          [/\|.*\|/g, ""], // remove
+          [/---.+---/g, ""], // remove
+
+          [/^\n/g, ""], // remove empty lines
+
+          // comments
+          // /\/\/ .*/, // remove, after file path
+          [/\/\* .+ \*\//g, " "], // remove
+          [/\/\*.+\*\//, " "], // remove
+          /\/\*.+\//, // remove
+          /^##.*/, // remove XXXXXXXX
+          /\*\\.*\n/, // remove XXXXXXX
+          /\/\*.*?\*\//, // remove check**
+          /\/\*(.*\n){0,200}?.*\*\//, // remove XXXXXXXX
+
+          // gibber
+          /^(.+=()?.+\n){3,}/, // remove
+          /^(.{0,40}:()?.{0,50}\n){3,}/, // remove
+
+          /```.*?```/, // remove
+          /`.*?`/, // remove
+          /```(.*\n){0,200}?.*```/, // remove
+          /`(.*\n){0,200}?.*`/, // remove
+          /\{.*?\}/, // remove
+          /\{(.*\n){0,200}?.*\}/, // remove
+          /\[.*?\]/, // remove
+          /\[(.*\n){0,200}?.*\]/, // remove
+          /".*?"/, //remove
+          /<.*?>/, //remove XXXXXXXXXXX is wrong
+          /<.+>(.*\n){0,200}?.*<\/.+>/, // remove XXXXXXXXXXXXX
+
+          // tags
+          /<\?php.+\?>/, // remove XXXXXXXXXXXX
+          /<\?.+\?>>/, // remove
+          /<\?= .+ ?>/, // tags
+
+          ///(^.+\.go.*\n){3,}/, //apply after uri reg exp
+          /<\?php .+ ?>/, // XXXXXXXXXXXX
+
           // exceptions
           /Caused by:.+\n(^\s+at .*\n){0,}\s+\.\.\..+/,
           /Caused by:.+\n(^\s+at .*\n){1,}/,
@@ -45,94 +144,23 @@ async function concatRawDataset(pg) {
           /^com\..+\..*Exception.*\n(^\s+at .*\n){1,}/,
           /java\.Lang\..*Error.*\n(^\s+at .*\n){1,}\s+\.\.\..+/,
           /java\.Lang\..*Error.*\n(^\s+at .*\n){1,}/,
-
           /^.+Error:.+\n(^\s+at .*\n){1,}/,
           /^(e|E)rror:.+\n(^\s+at .*\n){1,}/,
-
           /Sys.+Exception:.+\n.+name:.+\n(^\s+at .*\n){1,}/,
           /Exception of type:.+\n(^\s+at .*\n){1,}/,
           /Exception info:.+\n(^\s+at .*\n){1,}/,
           /^.+Exception:.+\n(^\s+in .*\n){1,}/,
-
           /(Stack trace|stacktrace|StackTrace|Stacktrace).+\n(^\s+at .*\n){1,}/,
-
           /(Stack trace|stacktrace|StackTrace|Stacktrace):\n(^#\d{1,}.+\n){1,}  thrown in.+\n/,
           /(^#\d{1,}.+\n){1,}  thrown in.+\n/,
           /(Stack trace|stacktrace|StackTrace|Stacktrace):\n(^#\d{1,}.+\n){1,}/,
           /(^#\d{1,} .+\n){4,}/,
-
           /(Stack trace|stacktrace|StackTrace|Stacktrace):\n(^\d{1,} .+\n){1,}  thrown in.+\n/,
           /(Stack trace|stacktrace|StackTrace|Stacktrace):\n(^\d{1,} .+\n){1,}/,
-
           /Warning:.+\n(^\s+in .*\n){2,}/,
           /(Stack trace|stacktrace|StackTrace|Stacktrace):.+\n(^\s+in .*\n){2,}/,
-
           /(^\s+at .*\n){2,}/,
           /(^\s+in .*\n){4,}/,
-
-          // logs
-          /^.*Error:.+\n(npm ERR!.+\n){1,}/, // node js error log
-          /(npm ERR!.*\n){1,}/, // node js error log
-          /(gyp ERR!.*\n){1,}/, // node js error log
-          /(npm (http|verb|info|INFO|Info|warn|WARN|Warn|uninstall|install|help).*\n){2,}/, // node js log
-          /^(.*\[.+\].*\n){3,}/,
-          /^Uncaught Error:.+/, // replace with nothing
-
-          /(^.*[\d]{1,2}:[\d]{1,2}:[\d]{1,2}.*\n){3,}/, //replace with log line
-          /(^\[.+\].*\n){2,}/, //replace with log line
-          // /(\d{2,4}\/\d{2,4}\/\d{2,4}.+\n){3,}/, //replace with log line
-          /(^(info|debug|warn|error|trace):.*\n){2,}/, //replace with log line
-          /(^(VERB|verb|Verbose|Verbose|VERBOSE|info|Info|INFO|debug|Debug|DEBUG|warn|Warn|WARN|error|ERROR|Error|trace|Trace|TRACE).*\n){3,}/, //replace with log line
-
-          /(^\d{1,} .+\n){10,}/, // remove
-          /(\[(VERB|verb|Verbose|Verbose|VERBOSE|info|Info|INFO|debug|Debug|DEBUG|warn|Warn|WARN|error|ERROR|Error|trace|Trace|TRACE|WArning|warning|WARNING|DBUG|EROR)\].*\n)/, // remove
-
-          // cmd
-          /^root@.+\n/, // remove
-          /^PS .+\n/, // remove
-          /^\$.+\n/, // remove
-          /(mysql>.+;\n|mysql>.+\n(->.+\n){1,}.+;)/, // sql
-          /postgres=#.+;\n/, // sql
-          /^Query OK,.+\n/, // sql
-          /^[\d]{1,} rows in set.+\n/, // sql
-
-          // tables
-          /\+---.+---\+/, // remove
-          /\|.*\|/, // remove
-          /---.+---/, // remove
-
-          // comments
-          /\/\/ .*/, // remove, after file path
-          /\/\* .+ \*\//, // remove
-          /\/\*.+\*\//, // remove
-          /\/\*.+\//, // remove
-          /^##.*/, // remove
-          /\*\\.*\n/, // remove
-          /\/\*.*?\*\//, // remove check**
-          /\/\*(.*\n){1,200}.*\*\//, // remove
-
-          // gibber
-          /^(.+=()?.+\n){3,}/, // remove
-          /^(.{0,40}:()?.{0,50}\n){3,}/, // remove
-
-          /```.*?```/, // remove
-          /`.*?`/, // remove
-          /```(.*\n){0,200}?.*```/, // remove
-          /`(.*\n){0,200}?.*`/, // remove
-          /\{.*?\}/, // remove
-          /\{(.*\n){0,200}?.*\}/, // remove
-          /\[.*?\]/, // remove
-          /\[(.*\n){0,200}?.*\]/, // remove
-          /".*?"/, //remove
-          /"(.*\n){0,200}?.*"\]"/, // remove
-
-          // tags
-          /<\?php.+\?>/, // remove
-          /<\?.+\?>>/, // remove
-          /<\?= .+ ?>/, // tags
-
-          ///(^.+\.go.*\n){3,}/, //apply after uri reg exp
-          /<\?php .+ ?>/,
 
           // uri
           /(http|https|ftp):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/, //url
@@ -144,7 +172,7 @@ async function concatRawDataset(pg) {
           /file:\/\/(.*?)\s/, // filepath, put space end of replacement
           /git@.+\..+:.+\/.+\.git/, // url
 
-          // IP
+          // IPv4
           /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b(:\w{1,6})/, // IP_TOKEN
           /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/, // IP_TOKEN
 
@@ -413,32 +441,158 @@ async function concatRawDataset(pg) {
           // remaining stack traces
           /^(.+.(java|php|go|js|vue|jsx|cpp|scala|py|groovy|css|asp|aspx|rb|cs|cc|clj|hs|es6|jsm|swift):.+\n){2,}/, // stack trace
 
+          // path
+          /\w:(\\\S+){2,}/, // windows style path
+          /~(\/\S+){1,}/, // path
+          /(\.|\S+)?(\/\S+){2,}/, //path
+          /\.(\/\S+){1,}/, // path
+
+          // config
+          /--\w+(-\w+)*(=[\S]+)?/, // command flag config token
+          /\s-\w+(-\w+)+(=[\S]+)?/, // command flag config token
+          /[\s\n]-\w[\s\n]/, // remove command flags config token
+
+          // /([^\s\.]+\.){2,}([^\s\.]+)/, // remove - namespaces XXXXXXX
+
+          // /\s[a-z]+([A-Z][a-z]+){2,}/, // camelcase XXXXXXXXXXXX
+
           // gibber
-          /([a-zA-Z0-9]+[!"#\$%&\\'\(\)\*\+,-\.\/:;<=>\?@\[\]\^_\{\|\}~`]+)+[a-zA-Z0-9]*/, // remove all gibber
+          /(^.*0x.*\n){2,}/, // removes 0x4845 lines
+          /(^.*DATETIME_TOKEN.*\n){3,}/, // remove
+
+          // /([^\s!"#\$%&\\'\(\)\*\+,-\.\/:;<=>\?@\[\]\^_\{\|\}~`]+[!"#\$%&\\'\(\)\*\+,-\.\/:;<=>\?@\[\]\^_\{\|\}~`]+){2,}[^\s\.!?]+/, // remove all gibber
+          /([\S]+[!"#\$%&\\'\(\)\*\+,-\.\/:;<=>\?@\[\]\^_\{\|\}~`]+){2,}[^\s\.!?]+/, // remove all gibber
+          // /[\S]+[!"#\$%&\\'\(\)\*\+,-\.\/:;<=>\?@\[\]\^_\{\|\}~`]{2,}[^\s\.!?]+/, //
         ]
 
-        let a = [
-          "org.opensolaris.opengrok.index.IndexDatabase.indexDown(IndexDatabase.java:561)",
-          // language detection
-          // @mentions
-          // Removing Accented Characters (résumé)
-          // Expanding Contractions
-          // named entity recognition
-          // check with or wihour hypehn from word embeddings database
-          // 2- remove everythin in brackets [.+]
-          // 3- replace --aaa-bbb with a special token -> COMMAND_FLAG, CONFIG
-          // 4- replace file path with token /var/log/containers -> FILE_PATH
-          // 6- replace org.jooq.exception.DataChangedException name spaces -> NAME_SPACE
-          // 7- replace plugin/kubernetes like phrases with token -> NAME_SPACE
-          // 8- replace nopods=true or --net=mynet like phrases with token -> CONFIG
-          // 9- replace nopods:true and "nopods: true" like phrases to token -> CONFIG
-          // 10- replace rancher-ha.sh or /etc/aa/rancher-ha.sh with -> FILE_NAME
-          // 12- replace sync_error_idc with token -> identifier
-          // 14- should replace functoin calls ? build_connect_url() -> FUNCTION_CALL
-          // 16- replace LoginByUsername or loginByUsernameunit (camel case) -> IDENTIFIER
-          // PACKAGE
-          // COMMAND
-        ]
+        // let a = [
+        // "org.opensolaris.opengrok.index.IndexDatabase.indexDown(IndexDatabase.java:561)",
+        // 7- replace plugin/kubernetes like phrases with token -> NAME_SPACE
+        // 9- replace nopods:true and "nopods: true" like phrases to token -> CONFIG
+        // 12- replace sync_error_idc with token -> identifier
+        // 14- should replace functoin calls ? build_connect_url() -> FUNCTION_CALL
+        // 16- replace LoginByUsername or loginByUsernameunit (camel case) -> IDENTIFIER
+        // COMMAND
+        // duplicate words \b([A-Z]{3,})\s+\1\b
+        // ]
+
+        const contractions = {
+          "ain't": "are not",
+          "aren't": "are not",
+          "can't": "can not",
+          "can't've": "can not have",
+          "'cause": "because",
+          "could've": "could have",
+          "couldn't": "could not",
+          "couldn't've": "could not have",
+          "didn't": "did not",
+          "doesn't": "does not",
+          "don't": "do not",
+          "hadn't": "had not",
+          "hadn't've": "had not have",
+          "hasn't": "has not",
+          "here's": "here is",
+          "haven't": "have not",
+          "he'd": "he would",
+          "he'd've": "he would have",
+          "he'll": "he will",
+          "he'll've": "he will have",
+          "he's": "he is",
+          "how'd": "how did",
+          "how're": "how are",
+          "how'd'y": "how do you",
+          "how'll": "how will",
+          "how's": "how is",
+          "I'd": "I would",
+          "I'd've": "I would have",
+          "I'll": "I will",
+          "I'll've": "I will have",
+          "I'm": "I am",
+          "I've": "I have",
+          "isn't": "is not",
+          "it'd": "it would",
+          "it'd've": "it would have",
+          "it'll": "it will",
+          "it'll've": "it will have",
+          "it's": "it is",
+          "let's": "let us",
+          "ma'am": "madam",
+          "mayn't": "may not",
+          "might've": "might have",
+          "mightn't": "might not",
+          "mightn't've": "might not have",
+          "must've": "must have",
+          "mustn't": "must not",
+          "mustn't've": "must not have",
+          "needn't": "need not",
+          "needn't've": "need not have",
+          "o'clock": "of the clock",
+          "oughtn't": "ought not",
+          "shan't": "shall not",
+          "sha'n't": "shall not",
+          "she'd": "she would",
+          "she'll": "she will",
+          "she's": "she is",
+          "should've": "should have",
+          "shouldn't": "should not",
+          "that'd": "that would",
+          "that's": "that is",
+          "there'd": "there would",
+          "there's": "there is",
+          "they'd": "they would",
+          "they'll": "they will",
+          "they're": "they are",
+          "they've": "they have",
+          "to've": "to have",
+          "wasn't": "was not",
+          "we'd": "we would",
+          "we'll": "we will",
+          "we're": "we are",
+          "we've": "we have",
+          "weren't": "were not",
+          "what'll": "what will",
+          "what're": "what are",
+          "what's": "what is",
+          "what've": "what have",
+          "when's": "when is",
+          "when've": "when have",
+          "where'd": "where did",
+          "where's": "where is",
+          "where've": "where have",
+          "who'll": "who will",
+          "who's": "who is",
+          "who've": "who have",
+          "why's": "why is",
+          "why've": "why have",
+          "will've": "will have",
+          "won't": "will not",
+          "would've": "would have",
+          "wouldn't": "would not",
+          "wouldn't've": "would not have",
+          "y'all": "you all",
+          "you'd": "you would",
+          "you'd've": "you would have",
+          "you'll": "you will",
+          "you're": "you are",
+          "you've": "you have",
+          "'em": " them",
+          "doin'": "doing",
+          "goin'": "going",
+          "nothin'": "nothing",
+          "somethin'": "something",
+          "havin'": "having",
+          "lovin'": "loving",
+          "'coz": "because",
+          thats: "that is",
+          whats: "what is",
+          ima: "I am going to",
+          gonna: "going to",
+          gotta: "got to",
+          wanna: "want to",
+          woulda: "would have",
+          gimme: "give me",
+          asap: "as soon as possible",
+        }
 
         appendFileSync(
           `./dataset/concat.txt`,
