@@ -1,0 +1,45 @@
+=== Run information ===
+
+Scheme:       weka.classifiers.lazy.IBk -K 20 -W 0 -X -A "weka.core.neighboursearch.LinearNNSearch -A \"weka.core.EuclideanDistance -R first-last\""
+Relation:     vectors
+Instances:    9999
+Attributes:   769
+              [list of attributes omitted]
+Test mode:    split 70.0% train, remainder test
+
+=== Classifier model (full training set) ===
+
+IB1 instance-based classifier
+using 18 nearest neighbour(s) for classification
+
+
+Time taken to build model: 0.02 seconds
+
+=== Evaluation on test split ===
+
+Time taken to test model on test split: 193.77 seconds
+
+=== Summary ===
+
+Correctly Classified Instances        1948               64.9333 %
+Incorrectly Classified Instances      1052               35.0667 %
+Kappa statistic                          0.3   
+Mean absolute error                      0.4325
+Root mean squared error                  0.4647
+Relative absolute error                 86.4932 %
+Root relative squared error             92.933  %
+Total Number of Instances             3000     
+
+=== Detailed Accuracy By Class ===
+
+                 TP Rate  FP Rate  Precision  Recall   F-Measure  MCC      ROC Area  PRC Area  Class
+                 0.584    0.284    0.680      0.584    0.629      0.303    0.717     0.710     not_question
+                 0.716    0.416    0.626      0.716    0.668      0.303    0.717     0.687     question
+Weighted Avg.    0.649    0.349    0.653      0.649    0.648      0.303    0.717     0.698     
+
+=== Confusion Matrix ===
+
+    a    b   <-- classified as
+  890  633 |    a = not_question
+  419 1058 |    b = question
+

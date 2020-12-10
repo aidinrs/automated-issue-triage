@@ -49,6 +49,10 @@ CREATE TABLE issues(
   not_question boolean,
   question boolean,
   text_body text,
+  cleaned_text_body text,
+  tokens text,
+  sentence_count integer,
+  tokens_count integer,
   FOREIGN KEY (repo_id) REFERENCES repositories(id),
   FOREIGN KEY (user_id) REFERENCES developers(id)
 ); 
