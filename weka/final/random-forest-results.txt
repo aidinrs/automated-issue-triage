@@ -1,0 +1,47 @@
+=== Run information ===
+
+Scheme:       weka.classifiers.trees.RandomForest -P 100 -I 100 -num-slots 1 -K 0 -M 1.0 -V 0.001 -S 1
+Relation:     vectors_roberta-large-nli-stsb-mean-tokens_200t
+Instances:    102198
+Attributes:   1025
+              [list of attributes omitted]
+Test mode:    split 70.0% train, remainder test
+
+=== Classifier model (full training set) ===
+
+RandomForest
+
+Bagging with 100 iterations and base learner
+
+weka.classifiers.trees.RandomTree -K 0 -M 1.0 -V 0.001 -S 1 -do-not-check-capabilities
+
+Time taken to build model: 331.16 seconds
+
+=== Evaluation on test split ===
+
+Time taken to test model on test split: 2.72 seconds
+
+=== Summary ===
+
+Correctly Classified Instances       21875               71.3494 %
+Incorrectly Classified Instances      8784               28.6506 %
+Kappa statistic                          0.3765
+Mean absolute error                      0.422 
+Root mean squared error                  0.4451
+Relative absolute error                 87.098  %
+Root relative squared error             90.5146 %
+Total Number of Instances            30659     
+
+=== Detailed Accuracy By Class ===
+
+                 TP Rate  FP Rate  Precision  Recall   F-Measure  MCC      ROC Area  PRC Area  Class
+                 0.489    0.131    0.721      0.489    0.583      0.393    0.772     0.696     question
+                 0.869    0.511    0.711      0.869    0.782      0.393    0.772     0.816     not_question
+Weighted Avg.    0.713    0.356    0.715      0.713    0.700      0.393    0.772     0.767     
+
+=== Confusion Matrix ===
+
+     a     b   <-- classified as
+  6129  6412 |     a = question
+  2372 15746 |     b = not_question
+

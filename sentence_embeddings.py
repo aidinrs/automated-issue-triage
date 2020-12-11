@@ -12,13 +12,13 @@ connection = psycopg2.connect(user="postgres",
                               database="github")
 cur = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-# model = SentenceTransformer('distilbert-base-nli-mean-tokens')
-model = SentenceTransformer('roberta-large-nli-stsb-mean-tokens')
+modelBase = SentenceTransformer('distilbert-base-nli-mean-tokens')
+modelLarge = SentenceTransformer('roberta-large-nli-stsb-mean-tokens')
 
 
 
 
-def write_sentence_embeddings(file, row):
+def write_sentence_embeddings(file, row, model):
   try:
     print(row['id'])
     doc = row['tokens'].lower().replace(',', ' ')
@@ -33,24 +33,33 @@ def write_sentence_embeddings(file, row):
 
 
 def main():
-  file = open("./dataset/sbert/vectors_30k_roberta_large_nli_stsb_mean_tokens.csv", "a")
+  fileBase = open("./dataset/sbert/vectors_distilbert-base-nli-mean-tokens_200t.csv", "a")
+  fileLarge = open("./dataset/sbert/vectors_roberta-large-nli-stsb-mean-tokens_200t.csv", "a")
 
   # write csv header line
   for i in range(0,768):
-    file.write(f'f{i},')
-  file.write(f'label\n')
+    fileBase.write(f'f{i},')
+  fileBase.write(f'label\n')
 
-  cur.execute("SELECT * from issues where tokens is not null and question is true and tokens_count <= 100 and tokens_count >=5 and sentence_count <= 10 and text_lang='en'")
+  for i in range(0,1024):
+    fileLarge.write(f'f{i},')
+  fileLarge.write(f'label\n')
+
+  cur.execute("SELECT * from issues where question is true and eval_selected is true")
   rows = cur.fetchall()
   for row in rows:
-    write_sentence_embeddings(file, row)  
+    write_sentence_embeddings(fileBase, row, modelBase)  
+    write_sentence_embeddings(fileLarge, row, modelLarge)  
   
-  cur.execute("SELECT * from issues where tokens is not null and question is false and tokens_count <= 100 and tokens_count >=5 and sentence_count <= 10 and text_lang='en' ORDER BY random() limit 50000")
+  # cur.execute("SELECT * from issues where tokens is not null and question is false and tokens_count <= 200 and tokens_count >=5 and sentence_count <= 20 and text_lang='en' ORDER BY random() limit 60000")
+  cur.execute("SELECT * from issues where question is false and eval_selected is true")
   rows = cur.fetchall()
   for row in rows:
-    write_sentence_embeddings(file, row)  
+    write_sentence_embeddings(fileBase, row, modelBase)  
+    write_sentence_embeddings(fileLarge, row, modelLarge) 
 
-  file.close()
+  fileBase.close()
+  fileLarge.close()
   connection.close()
 
   # notify

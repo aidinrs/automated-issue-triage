@@ -72,7 +72,7 @@ for row in rows:
     # print(lang)
 
     # cur.execute(f'UPDATE issues set sentence_count={len(sentences)}, tokens_count={len(tokens)}, tokens=\'{",".join(tokens)}\' where ID = \'{row["id"]}\'')
-    cur.execute(f'UPDATE issues set text_lang=\'{lang}\' where ID = \'{row["id"]}\'')
+    # cur.execute(f'UPDATE issues set text_lang=\'{lang}\' where ID = \'{row["id"]}\'')
     connection.commit()
 
   except Exception as e:

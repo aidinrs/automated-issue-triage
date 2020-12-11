@@ -53,6 +53,7 @@ CREATE TABLE issues(
   tokens text,
   sentence_count integer,
   tokens_count integer,
+  eval_selected boolean,
   FOREIGN KEY (repo_id) REFERENCES repositories(id),
   FOREIGN KEY (user_id) REFERENCES developers(id)
 ); 
