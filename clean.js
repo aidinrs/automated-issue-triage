@@ -607,7 +607,7 @@ const regs = [
   [/^\s*\n/g, ""], // remove empty lines
 
   // gibber
-  [/(^.*0x.*\n){2,}/gim, ""], // removes 0x4845 lines
+  [/(^.*0x.*\n){3,}/gim, ""], // removes 0x4845 lines
 
   [/^\s*\n/g, ""], // remove empty lines
 

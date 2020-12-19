@@ -17,7 +17,7 @@
 }
 
 \author{\IEEEauthorblockN{Aidin Rasti}
-\IEEEauthorblockA{\textit{Electrical Engineering and Computer Science Dept} \\
+\IEEEauthorblockA{\textit{Electrical Engineering and Computer Science} \\
 \textit{University of Ottawa}\\
 Ottawa, Canada \\
 arast040@uottawa.ca}
@@ -33,54 +33,55 @@ arast040@uottawa.ca}
 
 \begin{abstract}
   One of the issues faced by the maintainers of popular open source software is the triage 
-  of new reported issues. Many of the issues submitted toXX the Issues Tracker are questions.
-  SomeXX people ask questions onXX Issues Trackers aboutXX their problem instead of using a QA 
+  of new reported issues. Many of the issues submitted to Issue Trackers are questions.
+  Many people ask questions on Issue Trackers about their problem instead of using a proper QA 
   website like StackOverflow. This may seem insignificant but for many of the big projects 
-  with millions of users this leads spamming of the Issue Tracking. Reading and labelling
+  with millions of users this leads to spamming of the Issue Tracker. Reading and labelling
   these unrelated issues manually is a serious time consuming task and these unrelated questions 
-  and to the burden. In fact, most often maintainers demand to not submit questions in the 
+  add to the burden. In fact, most often maintainers demand to not submit questions in the 
   Issue Tracker.
 
   To address this problem, first we have implemented a pattern based method
-  to clean issue texts and remove noise like log lines, stack traces, environment variables, code snippets, etc.
+  to clean text of issues and remove noise like log lines, stack traces, environment variables, 
+  code snippets, etc.
   Second, we have implemented a classification-based approach to automatically label unrelated questions. 
-  Empirical evaluations on a dataset of 100k records show that our approach 
+  Empirical evaluations on a dataset of 100k records shows that our approach 
   can detect questions with an accuracy of 80\%. 
 \end{abstract}  
 
 \begin{IEEEkeywords}
-  natural language processing, issue classification, check from list
+  natural language processing, issue classification, check from list XX
 \end{IEEEkeywords}
 
 \section{Introduction}
-With the prevalence of successfully open source software, authors of projects kindly carry on 
-the responsibility of supporting users and providing documentation for their users. The relation 
+With the prevalence of open source software, authors of projects kindly carry on 
+the responsibility of supporting users and providing documentation. The relation 
 between users and authors is a two-way relation, developers rely on feedback and reports from 
-users to improve their software. These feedbacks come in the form of bug reports, questions, 
+users to improve their software. These feedback come in the form of bug reports, questions, 
 features, suggestions, and enhancements, or what we technically call "Issue"s. Most developers
 prefer to use the Issue Tracking software just as a mean for developing the software, it is preferred 
 that questions related to the workings or documentation of the software be directed to forums or QA
 websites. And by questions we mean everything that is, asking about how to fix an error/problem, 
 asking about features and documentation, asking for help, etc.
 
-These unrelated questions only add to the clutter of Issues Trackers, especially in bigger projects,
-developers have to put serious amount of effort to triage or close issues. Providing a 
+These unrelated questions only add to the clutter of Issues Trackers, especially in bigger projects.
+Developers have to put tremendous amount of effort to triage or close issues. Providing a 
 simple automated tool to detect potential unrelated questions can help project managers 
 and software developers to focus on more practical issues.
 
 XXX Other works of software defect classification focus on classifying bugs, 
-features, enhancements, etc and they don't include questions. Because most of them are 
-based on the data provided from XXX internal Issue Trackers of projects like Mozilla, jBoss, and etc, 
-almost they don't contain questions. But for maintainers that use the build-in Issue Tracker
-of websites like GitHub the problem still remains. In addition, we want to focus on implementing 
-a binary classifier to filter questions, instead of the multi-class classifier that other 
+features, enhancements, etc. Most of them don't even include questions. Since most of them are 
+based on the data provided from internal Issue Trackers of projects like Mozilla, jBoss, Apache, they are
+trained on a structured and clean dataset. However, for developers that use the built-in Issue Tracker
+of platforms like GitHub, the problem still remains. Moreover, we want to focus on implementing 
+a binary classifier to filter questions, instead of the multi-class classifiers that other 
 works propose. Maybe we can say that the goals are a little different or even complementary. 
 For example, we can first filter spams by using our proposed classifier and then when 
-we are more confident that the reported issue is XXX good, we can use another classifier to 
-automatically categorize it. This may improve the accuracy of automatic categorization, and 
-enables deployment of these classifiers on a broader range of projects.
+we are more confident that the reported issue is related, we can use another classifier to 
+automatically categorize it. This may improve the accuracy of automatic categorization too. Also, this 
+enables deployment of those classifiers on a broader range of projects.
 
-In This work we want to investigate the feasibility of detecting unrelated and XXX bothersome questions
+In This work we want to investigate the feasibility of detecting unrelated questions
 in issue tracker of popular open source software on platforms like GitHub. We want to evaluate the performance
 of different classification algorithms. And finally, to compare the performance of a binary classification 
 (question, not-question) approach to other multi-class methods used in other works.
@@ -89,62 +90,132 @@ As mentioned earlier, our goal is to train a binary classifier to automatically 
 We have used previously available dataset of GitHub issues provided by \cite{8816794}.
 Cleaning and pre-processing the dataset narrowed down the count of our available 
 records to 102,198. The pre-processing part was the hardest part of our implementation
-since text of issues usually contain machine generated text data like logs. 
-After extracting text part of issues we have used state of the art sentence embedding techniques
-to convert text data to numerical features. After evaluating several classification 
-algorithms, We achieved the best result with the XXX SVM classification algorithm. 
+since text of issues usually contain machine generated texts like logs and stack traces. 
+After extracting the text part of issues, we have used state of the art sentence embedding techniques
+to convert text data to numerical vectors. By evaluating several classification 
+algorithms, we achieved the best result with the XXX SVM algorithm.
+
+In Section \ref{approach} we describe our dataset, data pre-precessing methods, 
+and the technical implementation. In Section \ref{eval} we show the performance of our implementation
+and discuss the results of different classification methods. In Section \ref{relworks} we discuss other 
+related works. Finally, Section \ref{conclusion} concludes this report.
+
+\section{Approach}\label{approach}
 In summary, our approach involves three main phases:
 \begin{itemize}
   \item[1)] The first phase is cleaning and pre-processing the text data of issues. 
   We used around 400 regular expressions to remove noise from the text of issues. 
   Most of the issues are not properly formatted and they contain stack traces, log lines, code snippets, 
   command lines, environment variables, configurations, ip addresses, identifiers, flags, timestamps, etc.
-  We have also applied the standard NLP pre-processing tasks such as removing punctuations 
-  and tokenization to prepare texts for the classifiers.
+  We have also applied the standard NLP pre-processing tasks such as tokenization and removing punctuations.
   \item[2)] The second phase is computing a sentence embedding of each text document provided by 
   the previous step. We have used the Sentence Bert \cite{reimers-2019-sentence-bert} technique to convert our
   documents to a high dimensional vector representation. The Sentence Bert is one the 
   best performing sentence embedding techniques according to benchmarks \cite{reimers-2019-sentence-bert}.
-  \item[3)] The final phase is training a classifier on extracted features. We have evaluated
+  \item[3)] The final phase is training a classifier on the extracted features. We have evaluated
   the performance of SVM, NaiveBayes, Decision Tree (J48), Random Forest and LMT Tree 
   classification algorithms.
 \end{itemize}
-In Section \ref{approach} we describe our dataset, data pre-precessing methods, 
-and the technical implementation. In Section \ref{eval} we show the performance of our implementation
-and discuss the results. In Section \ref{relworks} we discuss other related works.
-The Section \ref{conclusion} concludes this report.
 
-\section{Approach}\label{approach}
-approach
+In the following sections we explain our dataset, pre-processing methods, a few background definitions, and
+our implementation.
 
 \subsection{Dataset}
 We used the RapidRelease \cite{8816794} dataset. It contains 2 million issues from active and popular 
-GitHub repositories of 18 programming languages. The provided dataset is in the format of a SQL database.
-The label of each issue, applied by the maintainer, is also available. With a simple query we extracted
-top applied labels on issues, you can see the count of the top 20 labels in XX Table 1. We selected these
-top labels, bug, duplicate, enhancement, feature, improvement, and question to find more labels based on them.
-For example some projects may use the label "type: bug" to represent a bug. Also, many  of the issues 
-have more than one label. The labels are stored as string in a comma separated format. For example, an
-issue with both labels of bug and duplicate, is stored as "bug, duplicate". We can now easily query 
-issues that contain, for example, the string "feature" in their labels. 
-We queried the count of labels that contained them in their string 
-and sorted them by their usage count. For example, The top five applied labels that contained the "bug" string 
-are XX "Y yy y". A label with a higher usage count gives more confidence that it was applied correctly
-for its intended purpose and that the label is not arbitrary. 
-Therefore we have only selected labels from these list that had at least were used XX 50 times.   
+GitHub repositories of 18 programming languages. The provided dataset is a SQL database.
+The label of each issue, which are applied by the project maintainers, is also available in this dataset.
 
-User like filter to get some non question issues [bug, duplicate, enhancement, feature, wontfix, improvement ]. Filtered out issues that had question tag too.
-Used like filter for “question”
-For each tag I have selecect top tag. After counting and sorting them we selected tags which appeared more than 50 times. 
-Excluded help wanted, because some users used this label incorrectly to ask for help. But it is for the author to ask for other people to contribute.
-For questions only choosed closed issues.
-Removes bug, discussion tags from question.
+With a simple query we extracted frequently applied labels. you 
+can see the count of the top 10 labels in Table \ref{tab:labels}. 
+We have selected these top labels, \verb|bug|, \verb|duplicate|, \verb|enhancement|,
+\verb|feature|, \verb|improvement|, and \verb|question| to find more labels based on them.
+For example, some projects may use the label "type: bug" to represent a bug. Also, many of the issues 
+have more than one label. The labels are stored in the database as string in a comma separated format. 
+For example, an issue with both labels of bug and duplicate, is stored as ``bug,duplicate". 
+For each of these base labels, we queried issues that contained their strings. For example,
+for features we looked for labels that contained the string ``feature". We also queried their usage count and
+extracted top top applied labels for each category.
+For example, The top five applied labels that contained the ``feature" string 
+are: ``feature", ``feature request", ``kind/feature", ``cat:feature", ``type: feature".
+A label with a higher usage indicates that it is a relevant label for the intended purpose. This query resulted
+in thousands of records for each of the base labels, however, many of them were only applied
+a handful of times. Therefore we have only selected labels from these lists that 
+at least were used 50 times. For our classifier we have two categories of \verb|not-question| 
+and \verb|question|. We used the base labels \verb|bug|, \verb|duplicate|, \verb|enhancement|,
+\verb|feature|, \verb|improvement|, and their similar labels for the \verb|not-question| category. We used
+the \verb|question| or similar labels for the \verb|question| category. Given that many issues have 
+more than one label, we removed issues that had labels like ``bug,question'' or ``support,bug'' from 
+the list of frequent labels. We used this list of labels to extract issues. The list of labels
+used can be found in our code repository in the \verb|labels| folder for each one of the base labels.
+With this process we extracted 46,549 issues for the \verb|question| category and 280,829 for 
+the \verb|not-question|.
 
 
-
+\begin{table}[htbp]
+  \caption{Top 10 Applied Labels}
+  \begin{center}
+  \begin{tabular}{|c|c|}
+  % \hline
+  % \multicolumn{2}{|c|}{\textbf{Top 10 Applied Labels}} \\
+  \hline
+  % \cline{2-4} 
+  \textbf{Label} & \textbf{\textit{Count}}\\
+  \hline
+  bug           & 65735 \\
+  \hline
+  enhancement   & 43673 \\
+  \hline
+  question      & 34248 \\
+  \hline
+  cla: yes      & 17476 \\
+  \hline
+  duplicate     & 12210 \\
+  \hline
+  feature       & 9235 \\
+  \hline
+  stale         & 7996 \\
+  \hline
+  documentation & 7814 \\
+  \hline
+  invalid       & 7658 \\
+  \hline
+  cla signed    & 7306 \\
+  \hline
+  % \multicolumn{4}{l}{$^{\mathrm{a}}$Sample of a Table footnote.}
+  \end{tabular}
+  \end{center}
+  \label{tab:labels}
+\end{table}
 
 \subsection{Date cleaning and pre-processing}
-Date cleaning and pre-processing
+After extracting issues the pre-processing phase begins. Github issues are written in the Markdown format.
+We used the \verb|marked| \cite{web:marked} library to parse and compile issues, this library compiles
+Markdown to HTML. Following compiling issues to HTML we extracted the text part of issues from HTML.
+Also, during the translation to HTML we removed image, table, code, pre, and header tags. If the
+author of an issue had used the Markdown properly then after removing these tags only the text part
+of an issues would have remained. However, many developers do not submit issues in the proper format and we
+still have to further clean texts. 
+
+We applied more than 400 regular expressions to remove the remaining noise from text of issues. In 
+particular we have removed dependency trees, emojis, code snippets, comments, logs,
+error message, stack traces, timestamp, datetimes, command lines, environment variables, identifiers,
+HTML, markup tags, module versions, IP addresses, emails, github user handles, URIs, file paths, and digits.
+These regular expressions were designed by manually skimming through texts. Suppose we want to extract
+stack traces, most of the stack traces contain several consecutive lines that begin with 
+the ``at'' or ``in'' word or they contain the file extension of that specific 
+programming language (``.js'', ``.py''). Also, stack traces of a platform like Java or .NET are 
+very similar to each other and creating a pattern to extract them is easy.
+By manually analyzing our regular expression for stack traces we identified thousands
+of occurrences. As another example, suppose we want to remove log lines. Many developers copy logs or debug
+output of the software to help diagnose the problem. Almost all of the logs contain a timestamp on
+each line, therefore, if we see several consecutive lines that contain timestamps, there is 
+a high probability that they are software generated log outputs. 
+
+By manually applying our regular expressions
+and inspecting dozens of results we have fine tuned them to not catch incorrect patterns.
+Of course they are not perfect and there are still a handful of incorrect matches in a large dataset, but given 
+that they can match hundreds of correct patterns, we used them to remove the noise from text of issues.
+
 
 \subsection{Sentence Embeddings}
 Date cleaning and pre-processing
