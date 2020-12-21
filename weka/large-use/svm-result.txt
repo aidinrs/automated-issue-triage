@@ -1,0 +1,43 @@
+=== Run information ===
+
+Scheme:       weka.classifiers.functions.LibSVM -S 0 -K 2 -D 3 -G 0.0 -R 0.0 -N 0.5 -M 40.0 -C 1.0 -E 0.001 -P 0.1 -model "C:\\Program Files\\Weka-3-8-4" -seed 1
+Relation:     use_large_v5_200t
+Instances:    102198
+Attributes:   513
+              [list of attributes omitted]
+Test mode:    split 70.0% train, remainder test
+
+=== Classifier model (full training set) ===
+
+LibSVM wrapper, original code by Yasser EL-Manzalawy (= WLSVM)
+
+Time taken to build model: 14281.66 seconds
+
+=== Evaluation on test split ===
+
+Time taken to test model on test split: 3216.61 seconds
+
+=== Summary ===
+
+Correctly Classified Instances       23970               78.1826 %
+Incorrectly Classified Instances      6689               21.8174 %
+Kappa statistic                          0.5301
+Mean absolute error                      0.2182
+Root mean squared error                  0.4671
+Relative absolute error                 45.003  %
+Root relative squared error             94.8788 %
+Total Number of Instances            30659     
+
+=== Detailed Accuracy By Class ===
+
+                 TP Rate  FP Rate  Precision  Recall   F-Measure  MCC      ROC Area  PRC Area  Class
+                 0.914    0.406    0.762      0.914    0.831      0.548    0.754     0.747     not_question
+                 0.594    0.086    0.829      0.594    0.692      0.548    0.754     0.660     question
+Weighted Avg.    0.782    0.274    0.790      0.782    0.774      0.548    0.754     0.711     
+
+=== Confusion Matrix ===
+
+     a     b   <-- classified as
+ 16456  1553 |     a = not_question
+  5136  7514 |     b = question
+
