@@ -11,7 +11,7 @@
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
 
-\title{Detecting Questions On Github Issue Tracker\\
+\title{Labeling Questions Asked On GitHub Issue Trackers\\
 % {\footnotesize \textsuperscript{*}Note: Sub-titles are not captured in Xplore and should not be used}
 % \thanks{Identify applicable funding agency here. If none, delete this.}
 }
@@ -33,24 +33,24 @@ arast040@uottawa.ca}
 
 \begin{abstract}
   One of the issues faced by the maintainers of popular open source software is the triage 
-  of new reported issues. Many of the issues submitted to Issue Trackers are questions.
-  Many people ask questions on Issue Trackers about their problem instead of using a proper QA 
+  of new reported issues. Many of the issues submitted to issue trackers are questions.
+  Many people ask questions on issue trackers about their problem instead of using a proper QA 
   website like StackOverflow. This may seem insignificant but for many of the big projects 
-  with millions of users this leads to spamming of the Issue Tracker. Reading and labelling
+  with millions of users this leads to spamming of the issue tracker. Reading and labelling
   these unrelated issues manually is a serious time consuming task and these unrelated questions 
   add to the burden. In fact, most often maintainers demand to not submit questions in the 
-  Issue Tracker.
+  issue tracker.
 
   To address this problem, first we have implemented a pattern based method
-  to clean text of issues and remove noise like log lines, stack traces, environment variables, 
-  code snippets, etc.
+  to clean text of issues, we removed noise like logs, stack traces, environment variables, 
+  error message, etc.
   Second, we have implemented a classification-based approach to automatically label unrelated questions. 
-  Empirical evaluations on a dataset of 100k records shows that our approach 
-  can detect questions with an accuracy of 80\%. 
+  Empirical evaluations on a dataset of more than 102,000 records shows that our approach 
+  can label questions with an accuracy of over 81\%. 
 \end{abstract}  
 
 \begin{IEEEkeywords}
-  natural language processing, issue classification, check from list XX
+  —issue tracking system, natural language processing, machine learning, mining software repositories
 \end{IEEEkeywords}
 
 \section{Introduction}
@@ -71,8 +71,8 @@ and software developers to focus on more practical issues.
 
 XXX Other works of software defect classification focus on classifying bugs, 
 features, enhancements, etc. Most of them don't even include questions. Since most of them are 
-based on the data provided from internal Issue Trackers of projects like Mozilla, jBoss, Apache, they are
-trained on a structured and clean dataset. However, for developers that use the built-in Issue Tracker
+based on the data provided from internal issue trackers of projects like Mozilla, jBoss, Apache, they are
+trained on a structured and clean dataset. However, for developers that use the built-in issue tracker
 of platforms like GitHub, the problem still remains. Moreover, we want to focus on implementing 
 a binary classifier to filter questions, instead of the multi-class classifiers that other 
 works propose. Maybe we can say that the goals are a little different or even complementary. 
@@ -86,6 +86,18 @@ in issue tracker of popular open source software on platforms like GitHub. We wa
 of different classification algorithms. And finally, to compare the performance of a binary classification 
 (question, not-question) approach to other multi-class methods used in other works.
 
+\begin{figure}[t]
+  \centerline{\includegraphics[width=3.5in]{./figures/q-issue.png}}
+  \caption{A question submitted to the issue tracker of rails project on GitHub.}
+  \label{fig:qissue}
+\end{figure}
+
+\begin{figure*}[t]
+  \centerline{\includegraphics{./figures/process.png}}
+  \caption{Summary of our approach at a high level.}
+  \label{fig:process}
+\end{figure*}
+
 As mentioned earlier, our goal is to train a binary classifier to automatically label questions.
 We have used previously available dataset of GitHub issues provided by \cite{8816794}.
 Cleaning and pre-processing the dataset narrowed down the count of our available 
@@ -95,27 +107,56 @@ After extracting the text part of issues, we have used state of the art sentence
 to convert text data to numerical vectors. By evaluating several classification 
 algorithms, we achieved the best result with the XXX SVM algorithm.
 
+
+
+First, In Section \ref{relworks} we discuss other related works. 
 In Section \ref{approach} we describe our dataset, data pre-precessing methods, 
 and the technical implementation. In Section \ref{eval} we show the performance of our implementation
-and discuss the results of different classification methods. In Section \ref{relworks} we discuss other 
-related works. Finally, Section \ref{conclusion} concludes this report.
+and discuss the results of different classification methods.
+Finally, Section \ref{conclusion} concludes this report.
+
+
+\section{Related Works}\label{relworks}
+
+Work of Antoniol et al. \cite{10.1145/1463788.1463819} is one the defect classification works. They trained  
+classifiers with Naive Bayes, ADTree, and Logistic Regression on the text data of 1,800 issues extracted 
+from Mozilla, Eclipse, and JBoss. Their work is focused on classifying whether a submitted bug is bug or 
+non-bug (enhancement, feature request, etc). Zhou et al. \cite{6976097} improve on work 
+of \cite{10.1145/1463788.1463819} by including other structures attributes available in a issue tracker,
+such as assignee, dates, severity, into the machine learning model. Pingclasai et al. \cite{6754344} build a 
+classifier using LDA topic modeling for reclassification of issues. 
+They used decision tree, naive Bayes classifier, and logistic regression to classify issues to bug and not-bug. 
+Another work by Cubranic and Murphy \cite{1814517} use Naive Bayes for text classification 
+to find an assignee for a bug report. Hanmin and Xin use a LSTM neural network \cite{10.1145/3275219.3275239}
+to classify issues to bug and non-bugs, they showed that with a LSTM neural network they can achieve better 
+performance than some other machine learning based approaches.
+
+Kochhar et al. \cite{6923127} address the problem of misclassified reports in issue trackers. They have 
+extracted features from 7,000 issues from five open source projects to classify them into 13 categories. Unlike
+the other mentioned works, Kochhar et al. build a multi-class classifier using textual and structural data from 
+issues. But they categories does not include questions.
+
+To the best of our knowledge we couldn't find any issue classification works which included questions. Furthermore, 
+almost all of the mentioned works were done on a small dataset (less than 8,000 records) 
+collected from internal issue trackers.
+
 
 \section{Approach}\label{approach}
 In summary, our approach involves three main phases:
-\begin{itemize}
-  \item[1)] The first phase is cleaning and pre-processing the text data of issues. 
+\begin{enumerate}
+  \item The first phase is cleaning and pre-processing the text data of issues. 
   We used around 400 regular expressions to remove noise from the text of issues. 
   Most of the issues are not properly formatted and they contain stack traces, log lines, code snippets, 
   command lines, environment variables, configurations, ip addresses, identifiers, flags, timestamps, etc.
   We have also applied the standard NLP pre-processing tasks such as tokenization and removing punctuations.
-  \item[2)] The second phase is computing a sentence embedding of each text document provided by 
+  \item The second phase is computing a sentence embedding of each text document provided by 
   the previous step. We have used the Sentence Bert \cite{reimers-2019-sentence-bert} technique to convert our
   documents to a high dimensional vector representation. The Sentence Bert is one the 
   best performing sentence embedding techniques according to benchmarks \cite{reimers-2019-sentence-bert}.
-  \item[3)] The final phase is training a classifier on the extracted features. We have evaluated
-  the performance of SVM, NaiveBayes, Decision Tree (J48), Random Forest and LMT Tree 
+  \item The final phase is training a classifier on the extracted features. We have evaluated
+  the performance of SVM, Decision Tree (C4.5), Logistic Regression, Random Forest and k-NN 
   classification algorithms.
-\end{itemize}
+\end{enumerate}
 
 In the following sections we explain our dataset, pre-processing methods, a few background definitions, and
 our implementation.
@@ -150,7 +191,7 @@ used can be found in our code repository in the \verb|labels| folder for each on
 With this process we extracted XX 46,549 issues for the \verb|question| category and XX 280,829 for 
 the \verb|not-question|.
 
-\begin{table}[htbp]
+\begin{table}[t]
   \caption{Top 10 Applied Labels}
   \begin{center}
   \begin{tabular}{|c|c|}
@@ -158,7 +199,7 @@ the \verb|not-question|.
   % \multicolumn{2}{|c|}{\textbf{Top 10 Applied Labels}} \\
   \hline
   % \cline{2-4} 
-  \textbf{Label} & \textbf{\textit{Count}}\\
+  \textbf{Label} & \textbf{Count}\\
   \hline
   bug           & 65735 \\
   \hline
@@ -187,7 +228,7 @@ the \verb|not-question|.
 \end{table}
 
 \subsection{Date cleaning and pre-processing}
-After extracting issues the pre-processing phase begins. Github issues are written in the Markdown format.
+After extracting issues the pre-processing phase begins. GitHub issues are written in the Markdown format.
 We used the \verb|marked| \cite{web:marked} library to parse and compile issues, this library compiles
 Markdown to HTML. Following compiling issues to HTML we extracted the text part of issues from HTML.
 Also, during the translation to HTML we removed image, table, code, pre, and header tags. If the
@@ -197,8 +238,8 @@ still have to further clean texts.
 
 We applied more than 400 regular expressions to remove the remaining noise from text of issues. In 
 particular we have removed dependency trees, emojis, code snippets, comments, logs,
-error message, stack traces, timestamp, datetimes, command lines, environment variables, identifiers,
-HTML, markup tags, module versions, IP addresses, emails, github user handles, URIs, file paths, and digits.
+error message, stack traces, timestamp, date times, command lines, environment variables, identifiers,
+HTML, markup tags, module versions, IP addresses, emails, GitHub user handles, URIs, file paths, and digits.
 These regular expressions were designed by manually skimming through texts. Suppose we want to extract
 stack traces, most of the stack traces contain several consecutive lines that begin with 
 the ``at'' or ``in'' word or they contain the file extension of that specific 
@@ -221,10 +262,13 @@ The next step of pre-processing was filtering issues which were not in English l
 the \verb|langdetect| \cite{web:langdetect} library to determine the language of each issue 
 and then filter the ones that were not English.
 
-After cleaning the dataset we used the nltk library for tokenization. We used its default tokenizer 
-which is \verb|TreebankWordTokenizer|. Following tokenization we marked issues that had more than 
-five and lower than 200 tokens for training. This reduced the records of the \verb|question| category to
-42,198 and the \verb|not-question| category to 262,425.
+After cleaning the dataset we concated title and body of issues then we used the nltk library for 
+tokenization. We used its default tokenizer which is \verb|TreebankWordTokenizer|. Following 
+tokenization we marked issues that had more than five and lower than 200 tokens for training. 
+This reduced the records of the \verb|question| category 
+to 42,198 and the \verb|not-question| category to 262,425. Also, for the \verb|question| category we only selected
+issues that were closed. 
+
 
 \subsection{Sentence Embeddings}
 To understand the concept of sentence embeddings we should first understand word embeddings.
@@ -238,7 +282,7 @@ we can calculate a vector close to the vector of word ``queen'' by calculating t
 \begin{equation}
   king-men+woman=queen
 \end{equation}
-
+XX picture of glove capital country relation pic
 Word embeddings give us a numerical vector for each word. Sentence embeddings are an extension to 
 the word embeddings technique. Sentence embeddings are vector representation of a sentence, paragraph 
 or even a whole text document. One naive way of calculating the sentence embeddings of a text or sentence 
@@ -263,9 +307,9 @@ are available in our code repository.
 \subsection{Training classifiers}
 After extracting feature vectors we now have a dataset ready to train classification models. We have two datasets,
 one generated from Universal Sentence Encoder and one generated from Sentence-BERT. The Universal Sentence Encoder
-records have 512 dimensions while the Sentence-BERT ones have 1024 dimensions. We used the Weka UI toolkit
-to train classifiers. We have trained classifiers using the Logistic Regression, Decision Tree (C4.5), 
-Random Forest, and Support Vector Machine. In this section we briefly review each of the 
+records have 512 dimensions while the Sentence-BERT ones have 1024 dimensions. We used the Weka UI toolkit 
+\cite{10.1145/1656274.1656278} to train classifiers. We have trained classifiers using the Logistic Regression, 
+Decision Tree (C4.5), Random Forest, and Support Vector Machine. In this section we briefly review each of the 
 classification algorithms.
 \begin{itemize}
   \item\textbf{Logistic Regression:}: Logistic Regression can be used for binary classification. Instead of 
@@ -290,7 +334,17 @@ classification algorithms.
 \end{itemize}
 
 \section{Empirical Evaluation}\label{eval}
-In order to find the best classifier for our task, we have evaluated the performance of several popular
+We have implemented our approach to answer our three research questions. Our questions are:
+\begin{itemize}
+  \item{RQ1)} \textit{Is it possible to prevent spamming in issue trackers of popular open source software? 
+  is it possible to label questions asked in issue trackers?}
+  \item{RQ2)}\textit{Which classification algorithms yield goods result for this specific task?}
+  \item{RQ3)} \textit{Is the binary classification (question, not-question) a good approach? 
+  does it help or improve results?}
+\end{itemize}
+
+\subsection{RQ1 and RQ2}
+In order to answer our first two questions we have evaluated the performance of several popular
 classification algorithms over both datasets. One dataset containing feature vectors generated by 
 Sentence-BERT algorithm and another generated by the Universal Sentence Encoder algorithm. We have two labels for
 classification. The \verb|question| category has XX 42,000 issues. For the \verb|not-question| category 
@@ -303,251 +357,444 @@ on them for any of the classification algorithms. We used the Weka toolkit to tr
 If Weka toolkit normalized values by default for any of the classification algorithms, 
 we turned it off before training models. 
 
-We trained classifier with the Logistic Regression, Decision Tree (C4.5), Random Forest, and Support Vector Machine
+We trained classifiers with the Logistic Regression, Decision Tree (C4.5), Random Forest, and Support Vector Machine
 algorithms. For all of the classifier we ran the training process with its default parameters. You can find 
 these parameters in the code repository under the \verb|weka| folder. We trained all of the algorithms over 70\%
 of the dataset and we evaluated them over the 30\% test split. Also, we trained each of these algorithms two 
 times since we had two datasets. Due to the limited computation resources and time, we were not able to 
-perform cross validation. Still a 30\% test split over a dataset with more than 100,000 records is large enough 
-to give reliable results.
+perform cross validation. Still a 30\% test split over a dataset with more than 100,000 records is large 
+and diverse enough to give reliable results.
+The output of Weka for each algorithm is available in our code repository too. 
 
+In Table \ref{tab:results} you can find the accuracy of each classifier. Logistic Regression has the 
+highest accuracy among Universal Sentence Encoder data and SVM has the highest accuracy among 
+Sentence-BERT. The best classifier is the Logistic Regression trained over Universal Sentence Encoder 
+embeddings with an accuracy of 81.68\%. It almost performs two percent better than the best classifier 
+trained over the Sentence-BERT embeddings. In addition, we can observe that classifiers trained over 
+the Universal Sentence Encoder embeddings have more consistent results. All of its classifiers  
+perform good with an accuracy of at least 78\% (except the decision tree). 
 
-\section{Related Works}\label{relworks}
-
-\section{Conclusion}\label{conclusion}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-\section{Ease of Use}
-
-\subsection{Maintaining the Integrity of the Specifications}
-
-The IEEEtran class file is used to format your paper and style the text. All margins, 
-column widths, line spaces, and text fonts are prescribed; please do not 
-alter them. You may note peculiarities. For example, the head margin
-measures proportionately more than is customary. This measurement 
-and others are deliberate, using specifications that anticipate your paper 
-as one part of the entire proceedings, and not as an independent document. 
-Please do not revise any of the current designations.
-
-\section{Prepare Your Paper Before Styling}
-Before you begin to format your paper, first write and save the content as a 
-separate text file. Complete all content and organizational editing before 
-formatting. Please note sections \ref{AA}--\ref{SCM} below for more information on 
-proofreading, spelling and grammar.
-
-Keep your text and graphic files separate until after the text has been 
-formatted and styled. Do not number text heads---{\LaTeX} will do that 
-for you.
-
-\subsection{Abbreviations and Acronyms}\label{AA}
-Define abbreviations and acronyms the first time they are used in the text, 
-even after they have been defined in the abstract. Abbreviations such as 
-IEEE, SI, MKS, CGS, ac, dc, and rms do not have to be defined. Do not use 
-abbreviations in the title or heads unless they are unavoidable.
-
-\subsection{Units}
-\begin{itemize}
-\item Use either SI (MKS) or CGS as primary units. (SI units are encouraged.) English units may be used as secondary units (in parentheses). An exception would be the use of English units as identifiers in trade, such as ``3.5-inch disk drive''.
-\item Avoid combining SI and CGS units, such as current in amperes and magnetic field in oersteds. This often leads to confusion because equations do not balance dimensionally. If you must use mixed units, clearly state the units for each quantity that you use in an equation.
-\item Do not mix complete spellings and abbreviations of units: ``Wb/m\textsuperscript{2}'' or ``webers per square meter'', not ``webers/m\textsuperscript{2}''. Spell out units when they appear in text: ``. . . a few henries'', not ``. . . a few H''.
-\item Use a zero before decimal points: ``0.25'', not ``.25''. Use ``cm\textsuperscript{3}'', not ``cc''.)
-\end{itemize}
-
-\subsection{Equations}
-Number equations consecutively. To make your 
-equations more compact, you may use the solidus (~/~), the exp function, or 
-appropriate exponents. Italicize Roman symbols for quantities and variables, 
-but not Greek symbols. Use a long dash rather than a hyphen for a minus 
-sign. Punctuate equations with commas or periods when they are part of a 
-sentence, as in:
-\begin{equation}
-a+b=\gamma\label{eq}
-\end{equation}
-
-Be sure that the 
-symbols in your equation have been defined before or immediately following 
-the equation. Use ``\eqref{eq}'', not ``Eq.~\eqref{eq}'' or ``equation \eqref{eq}'', except at 
-the beginning of a sentence: ``Equation \eqref{eq} is . . .''
-
-\subsection{\LaTeX-Specific Advice}
-
-Please use ``soft'' (e.g., \verb|\eqref{Eq}|) cross references instead
-of ``hard'' references (e.g., \verb|(1)|). That will make it possible
-to combine sections, add equations, or change the order of figures or
-citations without having to go through the file line by line.
-
-Please don't use the \verb|{eqnarray}| equation environment. Use
-\verb|{align}| or \verb|{IEEEeqnarray}| instead. The \verb|{eqnarray}|
-environment leaves unsightly spaces around relation symbols.
-
-Please note that the \verb|{subequations}| environment in {\LaTeX}
-will increment the main equation counter even when there are no
-equation numbers displayed. If you forget that, you might write an
-article in which the equation numbers skip from (17) to (20), causing
-the copy editors to wonder if you've discovered a new method of
-counting.
-
-{\BibTeX} does not work by magic. It doesn't get the bibliographic
-data from thin air but from .bib files. If you use {\BibTeX} to produce a
-bibliography you must send the .bib files. 
-
-{\LaTeX} can't read your mind. If you assign the same label to a
-subsubsection and a table, you might find that Table I has been cross
-referenced as Table IV-B3. 
-
-{\LaTeX} does not have precognitive abilities. If you put a
-\verb|\label| command before the command that updates the counter it's
-supposed to be using, the label will pick up the last counter to be
-cross referenced instead. In particular, a \verb|\label| command
-should not go before the caption of a figure or a table.
-
-Do not use \verb|\nonumber| inside the \verb|{array}| environment. It
-will not stop equation numbers inside \verb|{array}| (there won't be
-any anyway) and it might stop a wanted equation number in the
-surrounding equation.
-
-\subsection{Some Common Mistakes}\label{SCM}
-\begin{itemize}
-\item The word ``data'' is plural, not singular.
-\item The subscript for the permeability of vacuum $\mu_{0}$, and other common scientific constants, is zero with subscript formatting, not a lowercase letter ``o''.
-\item In American English, commas, semicolons, periods, question and exclamation marks are located within
- quotation marks only when a complete thought or name is cited, such as a title or full quotation. When 
- quotation marks are used, instead of a bold or italic typeface,
- to highlight a word or phrase, punctuation should appear outside of the quotation marks. 
- A parenthetical phrase or statement at the end of a sentence is punctuated outside of the
-  closing parenthesis (like this). (A parenthetical sentence is punctuated within the parentheses.)
-\item A graph within a graph is an ``inset'', not an ``insert''. The word alternatively is preferred to the word ``alternately'' (unless you really mean something that alternates).
-\item Do not use the word ``essentially'' to mean ``approximately'' or ``effectively''.
-\item In your paper title, if the words ``that uses'' can accurately replace the word ``using'', capitalize the ``u''; if not, keep using lower-cased.
-\item Be aware of the different meanings of the homophones ``affect'' and ``effect'', ``complement'' and ``compliment'', ``discreet'' and ``discrete'', ``principal'' and ``principle''.
-\item Do not confuse ``imply'' and ``infer''.
-\item The prefix ``non'' is not a word; it should be joined to the word it modifies, usually without a hyphen.
-\item There is no period after the ``et'' in the Latin abbreviation ``et al.''.
-\item The abbreviation ``i.e.'' means ``that is'', and the abbreviation ``e.g.'' means ``for example''.
-\end{itemize}
-An excellent style manual for science writers is \cite{b7}.
-
-\subsection{Authors and Affiliations}
-\textbf{The class file is designed for, but not limited to, six authors.} A 
-minimum of one author is required for all conference articles. Author names 
-should be listed starting from left to right and then moving down to the 
-next line. This is the author sequence that will be used in future citations 
-and by indexing services. Names should not be listed in columns nor group by 
-affiliation. Please keep your affiliations as succinct as possible (for 
-example, do not differentiate among departments of the same organization).
-
-\subsection{Identify the Headings}
-Headings, or heads, are organizational devices that guide the reader through 
-your paper. There are two types: component heads and text heads.
-
-Component heads identify the different components of your paper and are not 
-topically subordinate to each other. Examples include Acknowledgments and 
-References and, for these, the correct style to use is ``Heading 5''. Use 
-``figure caption'' for your Figure captions, and ``table head'' for your 
-table title. Run-in heads, such as ``Abstract'', will require you to apply a 
-style (in this case, italic) in addition to the style provided by the drop 
-down menu to differentiate the head from the text.
-
-Text heads organize the topics on a relational, hierarchical basis. For 
-example, the paper title is the primary text head because all subsequent 
-material relates and elaborates on this one topic. If there are two or more 
-sub-topics, the next level head (uppercase Roman numerals) should be used 
-and, conversely, if there are not at least two sub-topics, then no subheads 
-should be introduced.
-
-\subsection{Figures and Tables}
-\paragraph{Positioning Figures and Tables} Place figures and tables at the top and 
-bottom of columns. Avoid placing them in the middle of columns. Large 
-figures and tables may span across both columns. Figure captions should be 
-below the figures; table heads should appear above the tables. Insert 
-figures and tables after they are cited in the text. Use the abbreviation 
-``Fig.~\ref{fig}'', even at the beginning of a sentence.
-
-\begin{table}[htbp]
-\caption{Table Type Styles}
-\begin{center}
-\begin{tabular}{|c|c|c|c|}
+\begin{table}[t]
+  \caption{Accuracy of classification algorithms trained over both embeddings with a 70-30 split}
+  \begin{center}
+  \begin{tabular}{|l|c|c|}
+  % \hline
+  % \multicolumn{2}{|c|}{\textbf{Top 10 Applied Labels}} \\
+  \hline
+  % \cline{2-4} 
+  \textbf{Sentence Embedding} & \textbf{Classifier}&\textbf{Accuracy}\\
+  \hline
+                            &k-NN                & 78.38\% \\
+                            &Decision Tree(C4.5) & 68.12\% \\
+  Universal Sentence Encoder&\textbf{Logistic Regression} & \textbf{81.68\%} \\
+  (512 features)            &Random Forest       & 79.05\% \\
+                            &SVM                 & 78.18\% \\
+  \hline
+               &k-NN                & 69.88\% \\
+               &Decision Tree(C4.5) & 60.41\% \\
+  Sentence-BERT&Logistic Regression & 78.42\% \\
+  (1024 features)&Random Forest     & 71.35\% \\
+               &\textbf{SVM}        & \textbf{79.86\%}\\
 \hline
-\textbf{Table}&\multicolumn{3}{|c|}{\textbf{Table Column Head}} \\
-\cline{2-4} 
-\textbf{Head} & \textbf{\textit{Table column subhead}}& \textbf{\textit{Subhead}}& \textbf{\textit{Subhead}} \\
-\hline
-copy& More table copy$^{\mathrm{a}}$& &  \\
-\hline
-\multicolumn{4}{l}{$^{\mathrm{a}}$Sample of a Table footnote.}
-\end{tabular}
-\label{tab1}
-\end{center}
+  % \multicolumn{4}{l}{$^{\mathrm{a}}$Sample of a Table footnote.}
+  \end{tabular}
+  \end{center}
+  \label{tab:results}
 \end{table}
 
-\begin{figure}[htbp]
-\centerline{\includegraphics{fig1.png}}
-\caption{Example of a figure caption.}
-\label{fig}
-\end{figure}
 
-Figure Labels: Use 8 point Times New Roman for Figure labels. Use words 
-rather than symbols or abbreviations when writing Figure axis labels to 
-avoid confusing the reader. As an example, write the quantity 
-``Magnetization'', or ``Magnetization, M'', not just ``M''. If including 
-units in the label, present them within parentheses. Do not label axes only 
-with units. In the example, write ``Magnetization (A/m)'' or ``Magnetization 
-\{A[m(1)]\}'', not just ``A/m''. Do not label axes with a ratio of 
-quantities and units. For example, write ``Temperature (K)'', not 
-``Temperature/K''.
 
-\section*{Acknowledgment}
+\begin{table}[h!b]
+  \caption{Precision and recall rates of }
+  \begin{center}
+  \begin{tabular}{|l|c|c|c|c|}
+  \hline
+  \textbf{Classifier}&\textbf{Class}&\textbf{Precision}&\textbf{Recall}&\textbf{F-Measure}\\
+  \hline
+  \multicolumn{5}{|c|}{\textit{Universal Sentence Encoder}}\\
+  \hline
+  k-NN               &NQ&79.2\%&85.8\%&82.3\%\\
+                     &Q &77.0\%&67.9\%&72.1\%\\
+  \hline
+  Decision Tree(C4.5)&NQ&73.0\%&72.6\%&72.8\%\\
+                     &Q &61.3\%&61.8\%&61.5\%\\
+  \hline
+  Logistic Regression&NQ&83.0\%&86.5\%&84.7\%\\
+                     &Q &79.6\%&74.8\%&77.1\%\\
+  \hline
+  Random Forest      &NQ&77.3\%&91.2\%&83.6\%\\
+                     &Q &83.1\%&61.8\%&70.9\%\\
+  \hline
+  SVM                &NQ&76.2\%&91.4\%&83.1\%\\
+                     &Q &82.9\%&59.4\%&69.2\%\\
+  \hline
+  \multicolumn{5}{|c|}{\textit{Sentence-BERT}}\\
+  \hline
+  k-NN               &NQ&78.0\%&68.3\%&72.8\%\\
+                     &Q &61.2\%&72.2\%&66.2\%\\
+  \hline                     
+  Decision Tree(C4.5)&NQ&66.7\%&66.0\%&66.3\%\\
+                     &Q &51.6\%&52.3\%&51.9\%\\
+  \hline                   
+  Logistic Regression&NQ&80.1\%&84.4\%&82.2\%\\
+                     &Q &75.6\%&69.8\%&72.6\%\\ 
+  \hline
+  Random Forest      &NQ&71.1\%&86.9\%&78.2\%\\ 
+                     &Q &72.1\%&48.9\%&58.3\%\\
+  \hline                   
+  SVM                &NQ&80.6\%&86.8\%&83.6\%\\
+                     &Q &78.6\%&69.8\%&73.9\%\\ 
+  \hline
+  \end{tabular}
+  \end{center}
+  \label{tab:results2}
+\end{table}
+To evaluate our approach better we examine other metrics too, accuracy alone is not a good metric for 
+evaluation. We have gathered the confusion matrix of each classifier in Fig.~\ref{fig:cfheatmap}. 
+By looking at it we see that the hardest part is labeling actual questions, all of the algorithms almost 
+struggle at classifying them. Logistic Regression over Universal Sentence Encoder embeddings, which had 
+the highest accuracy, has the highest TP rate for the question category too (74.8\%). SVM over 
+Universal Sentence Encoder embeddings has the highest true negatives category. 
+But The SVM classifier also has the lowest false positive numbers, the Logistic Regression has almost 1000 more 
+false positives. In classifiers trained over the Sentence-BERT embeddings, SVM has both the highest TP (69.8\%) 
+and the lowest FP rate (13.2\%). But the Random Forest classifier has the highest true negatives with a 
+little margin higher than the SVM.
 
-The preferred spelling of the word ``acknowledgment'' in America is without 
-an ``e'' after the ``g''. Avoid the stilted expression ``one of us (R. B. 
-G.) thanks $\ldots$''. Instead, try ``R. B. G. thanks$\ldots$''. Put sponsor 
-acknowledgments in the unnumbered footnote on the first page.
+To further compare results, we have provided Precision, Recall, and F-measure rates in Table \ref{tab:results2}.
+The Logistic algorithm trained over Universal Sentence Encoder embeddings has the highest F-measure rates.
+In the Sentence-BERT embeddings category, the SVM classifier has the highest F-measure. By analyzing the precision 
+rates we can still see that Logistic Regression trained with universal Sentence Encoder embeddings still has 
+the best performance, its average precision is higher than any other classifier. 
+Although, as we can see in Fig.~\ref{fig:cfheatmap} it has much higher false positives than the SVM and 
+Random Forest. It may be more sensible to use these two instead of the Logistic Classifier.
 
-\section*{References}
+\begin{figure*}[t]
+  \centerline{\includegraphics[width=7.16in]{./figures/cf-heatmaps8.png}}
+  \caption{Heat map of confusion matrix of trained models over both sentence embeddings.}
+  \label{fig:cfheatmap}
+\end{figure*}
 
-Please number citations consecutively within brackets \cite{b1}. The 
-sentence punctuation follows the bracket \cite{b2}. Refer simply to the reference 
-number, as in \cite{b3}---do not use ``Ref. \cite{b3}'' or ``reference \cite{b3}'' except at 
-the beginning of a sentence: ``Reference \cite{b3} was the first $\ldots$''
+Regarding RQ1, given the evaluations and empirical evidence, we can conclude that it is feasible to classify 
+questions in issue trackers of platforms like GitHub with a pretty good precision. We saw that we can achieve 
+an accuracy rate of 81.6\%. To answer RQ2 we trained several models with popular algorithms. We assessed two
+different Sentence Embedding techniques to find which is more suitable for our task. We observed that the 
+Universal Sentence Encoder has better and more consistent performance for our task. The answer to RQ2 is not a 
+single algorithm, if we only measure the accuracy metric, the Logistic Regression works best. However, if we
+analyze other metrics we mau choose other algorithms. For example, the Random Forest model trained with
+Universal Sentence Encoder embeddings has an accuracy of 79.00\% but it has much lower false positives than the 
+Logistic Regression classifier.
 
-Number footnotes separately in superscripts. Place the actual footnote at 
-the bottom of the column in which it was cited. Do not put footnotes in the 
-abstract or reference list. Use letters for table footnotes.
+We noticed that the bottleneck in the accuracy of almost all of the classifiers is categorizing issues that are 
+actually questions. They can label issues that are not questions with good accuracy. This problem can be attributed 
+to the fact that many of the submitted questions in issues trackers will be converted to other type of issues by 
+the maintainers. For example, a submitted question about a feature may interest developers and they decide to 
+implement it, thus they will apply a ``feature'' label to the issue which is asking a question. 
+The same happens with other labels such as ``bug'' too, a submitted question about an error 
+may in fact turn out to be a bug. Since our dataset is not manually labeled for the purpose of our task and we 
+depend on the labels provided by authors of projects this problem can't be addressed trivially. 
+Manually labeling issues may help address this problem bu it is time consuming. Another approach may be to analyze 
+the dataset using an unsupervised algorithm.
 
-Unless there are six authors or more give all authors' names; do not use 
-``et al.''. Papers that have not been published, even if they have been 
-submitted for publication, should be cited as ``unpublished'' \cite{b4}. Papers 
-that have been accepted for publication should be cited as ``in press'' \cite{b5}. 
-Capitalize only the first word in a paper title, except for proper nouns and 
-element symbols.
+\subsection{RQ3}
+With RQ3 we are interested in the comparing our approach with other works. However, a direct comparison with other 
+works is not possible. As we saw in Section \ref{relworks}, almost all of the works in the defect classification area 
+are multi-class classification problems. XX By comparing raw metrics we can reckon that our approach has the highest 
+accuracy for classifying questions. Nevertheless, we think that our approach and other works are complementary.
+We can apply both of them in a pipeline fashion. First, we can separately label questions submitted to a 
+issue tracker, then apply another categorization methods to predict the class of issue.
 
-For papers published in translation journals, please give the English 
-citation first, followed by the original foreign-language citation \cite{b6}.
+\subsection{Limitations and Further Improvements}
+\label{limits}
+Due to the size of our dataset and limited computation power, we were not able tune hyper parameters of 
+classification algorithms used in Weka. We used the default parameters set by Weka. 
+However, when we searched for the best value for a few of the parameters over a small sample dataset,
+we saw a modest improvement in results.
+
+Our initial solution to solve this problem was to train an LSTM network with Word Embeddings. Using lower level 
+embeddings with a neural network may improve results. But we don't know how much improvement it can yield.
+As explained in Section \ref{approach} after pre-processing the RapidRelease dataset, we only used issues with 
+more than five and less than 200 tokens to train models. Also, vectors generated by Word Embedding algorithms 
+can have at least 100 dimensions. With this high amount of input and training parameters, training a neural network 
+failed on our device. 
+
+As mention above, we filtered issues with long texts, we have only trained models over issue that had lower than 200 
+tokens. We removed longer issues because the performance of sentence embedding algorithms degrades 
+with longer texts. Still 200 tokens is long enough for most of issues and we also counted tokens after 
+removing all the noise (log lines, stack traces) from the text of issue.
+
+\subsection{Threats to Validity}
+Like all evaluations our tests are also prone to external validity and generalization. We have only used data from 
+the GitHub issue tracker. But we think that the amount of questions asked on issue tracker of projects that don't 
+use GitHub (for example, ASF software have their own issue trackers) is very small, since GitHub is the only major 
+platform for hosting open source projects. Furthermore, the RapidRelease dataset is diverse and includes issues 
+form several developer communities and programming languages. 
+
+Another factor is that we relied on the labels applied by developers of projects. The labels may not completely 
+reflect our intended two categories, especially for questions. As we discussed in Subsection \ref{limits} this 
+may be the reason why classifiers had less precision for the question category. Overall, we tried to use issues 
+that had labels 
+
+\section{Lessons Learned}
+The most important lesson I learned was that to not rely on a single solution. It is always best to evaluate several 
+approaches to find the best possible fit. Another thing I noticed is that accuracy metric alone is not enough 
+to gauge performance. We have to look at other metrics too and analyze more details. The accuracy metric can be 
+misleading.
+
+\section{Conclusion}\label{conclusion}
+Our goal was analyzing feasibility of detecting unrelated questions submitted to issue trackers in platforms like 
+GitHub. To address this problem We used a previously provided dataset of GitHub issues by the RapidRelease work. 
+We filtered and pre-processed the raw dataset and narrowed count of issues for analysis to approximately 
+102,000 issues. We were able to filter noise, such as stack traces, logs, etc, from text of issues. 
+To prepare our textual data for machine learning algorithms, we used two of state-of-the-art sentence embeddings
+techniques, Sentence-BERT and Universal Sentence Encoder, to extract numerical feature vectors. Finally, we 
+trained classifiers over our dataset with five famous classification algorithms. The best result was yielded
+with the Logistic Regression algorithm trained over Universal Sentence Encoder embeddings with the accuracy
+rate of 81.68\%. Overall, we conclude that it is possible to label questions submitted to an public issues tracker
+with a good probability, however, the 
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv,references}
+\vspace{12pt}
+\color{red}
+
+\end{document}
+
+% pre process pseudo code
+% transfer learning
+% make db dump
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% \section{Ease of Use}
+
+% \subsection{Maintaining the Integrity of the Specifications}
+
+% The IEEEtran class file is used to format your paper and style the text. All margins, 
+% column widths, line spaces, and text fonts are prescribed; please do not 
+% alter them. You may note peculiarities. For example, the head margin
+% measures proportionately more than is customary. This measurement 
+% and others are deliberate, using specifications that anticipate your paper 
+% as one part of the entire proceedings, and not as an independent document. 
+% Please do not revise any of the current designations.
+
+% \section{Prepare Your Paper Before Styling}
+% Before you begin to format your paper, first write and save the content as a 
+% separate text file. Complete all content and organizational editing before 
+% formatting. Please note sections \ref{AA}--\ref{SCM} below for more information on 
+% proofreading, spelling and grammar.
+
+% Keep your text and graphic files separate until after the text has been 
+% formatted and styled. Do not number text heads---{\LaTeX} will do that 
+% for you.
+
+% \subsection{Abbreviations and Acronyms}\label{AA}
+% Define abbreviations and acronyms the first time they are used in the text, 
+% even after they have been defined in the abstract. Abbreviations such as 
+% IEEE, SI, MKS, CGS, ac, dc, and rms do not have to be defined. Do not use 
+% abbreviations in the title or heads unless they are unavoidable.
+
+% \subsection{Units}
+% \begin{itemize}
+% \item Use either SI (MKS) or CGS as primary units. (SI units are encouraged.) English units may be used as secondary units (in parentheses). An exception would be the use of English units as identifiers in trade, such as ``3.5-inch disk drive''.
+% \item Avoid combining SI and CGS units, such as current in amperes and magnetic field in oersteds. This often leads to confusion because equations do not balance dimensionally. If you must use mixed units, clearly state the units for each quantity that you use in an equation.
+% \item Do not mix complete spellings and abbreviations of units: ``Wb/m\textsuperscript{2}'' or ``webers per square meter'', not ``webers/m\textsuperscript{2}''. Spell out units when they appear in text: ``. . . a few henries'', not ``. . . a few H''.
+% \item Use a zero before decimal points: ``0.25'', not ``.25''. Use ``cm\textsuperscript{3}'', not ``cc''.)
+% \end{itemize}
+
+% \subsection{Equations}
+% Number equations consecutively. To make your 
+% equations more compact, you may use the solidus (~/~), the exp function, or 
+% appropriate exponents. Italicize Roman symbols for quantities and variables, 
+% but not Greek symbols. Use a long dash rather than a hyphen for a minus 
+% sign. Punctuate equations with commas or periods when they are part of a 
+% sentence, as in:
+% \begin{equation}
+% a+b=\gamma\label{eq}
+% \end{equation}
+
+% Be sure that the 
+% symbols in your equation have been defined before or immediately following 
+% the equation. Use ``\eqref{eq}'', not ``Eq.~\eqref{eq}'' or ``equation \eqref{eq}'', except at 
+% the beginning of a sentence: ``Equation \eqref{eq} is . . .''
+
+% \subsection{\LaTeX-Specific Advice}
+
+% Please use ``soft'' (e.g., \verb|\eqref{Eq}|) cross references instead
+% of ``hard'' references (e.g., \verb|(1)|). That will make it possible
+% to combine sections, add equations, or change the order of figures or
+% citations without having to go through the file line by line.
+
+% Please don't use the \verb|{eqnarray}| equation environment. Use
+% \verb|{align}| or \verb|{IEEEeqnarray}| instead. The \verb|{eqnarray}|
+% environment leaves unsightly spaces around relation symbols.
+
+% Please note that the \verb|{subequations}| environment in {\LaTeX}
+% will increment the main equation counter even when there are no
+% equation numbers displayed. If you forget that, you might write an
+% article in which the equation numbers skip from (17) to (20), causing
+% the copy editors to wonder if you've discovered a new method of
+% counting.
+
+% {\BibTeX} does not work by magic. It doesn't get the bibliographic
+% data from thin air but from .bib files. If you use {\BibTeX} to produce a
+% bibliography you must send the .bib files. 
+
+% {\LaTeX} can't read your mind. If you assign the same label to a
+% subsubsection and a table, you might find that Table I has been cross
+% referenced as Table IV-B3. 
+
+% {\LaTeX} does not have precognitive abilities. If you put a
+% \verb|\label| command before the command that updates the counter it's
+% supposed to be using, the label will pick up the last counter to be
+% cross referenced instead. In particular, a \verb|\label| command
+% should not go before the caption of a figure or a table.
+
+% Do not use \verb|\nonumber| inside the \verb|{array}| environment. It
+% will not stop equation numbers inside \verb|{array}| (there won't be
+% any anyway) and it might stop a wanted equation number in the
+% surrounding equation.
+
+% \subsection{Some Common Mistakes}\label{SCM}
+% \begin{itemize}
+% \item The word ``data'' is plural, not singular.
+% \item The subscript for the permeability of vacuum $\mu_{0}$, and other common scientific constants, is zero with subscript formatting, not a lowercase letter ``o''.
+% \item In American English, commas, semicolons, periods, question and exclamation marks are located within
+%  quotation marks only when a complete thought or name is cited, such as a title or full quotation. When 
+%  quotation marks are used, instead of a bold or italic typeface,
+%  to highlight a word or phrase, punctuation should appear outside of the quotation marks. 
+%  A parenthetical phrase or statement at the end of a sentence is punctuated outside of the
+%   closing parenthesis (like this). (A parenthetical sentence is punctuated within the parentheses.)
+% \item A graph within a graph is an ``inset'', not an ``insert''. The word alternatively is preferred to the word ``alternately'' (unless you really mean something that alternates).
+% \item Do not use the word ``essentially'' to mean ``approximately'' or ``effectively''.
+% \item In your paper title, if the words ``that uses'' can accurately replace the word ``using'', capitalize the ``u''; if not, keep using lower-cased.
+% \item Be aware of the different meanings of the homophones ``affect'' and ``effect'', ``complement'' and ``compliment'', ``discreet'' and ``discrete'', ``principal'' and ``principle''.
+% \item Do not confuse ``imply'' and ``infer''.
+% \item The prefix ``non'' is not a word; it should be joined to the word it modifies, usually without a hyphen.
+% \item There is no period after the ``et'' in the Latin abbreviation ``et al.''.
+% \item The abbreviation ``i.e.'' means ``that is'', and the abbreviation ``e.g.'' means ``for example''.
+% \end{itemize}
+% An excellent style manual for science writers is \cite{b7}.
+
+% \subsection{Authors and Affiliations}
+% \textbf{The class file is designed for, but not limited to, six authors.} A 
+% minimum of one author is required for all conference articles. Author names 
+% should be listed starting from left to right and then moving down to the 
+% next line. This is the author sequence that will be used in future citations 
+% and by indexing services. Names should not be listed in columns nor group by 
+% affiliation. Please keep your affiliations as succinct as possible (for 
+% example, do not differentiate among departments of the same organization).
+
+% \subsection{Identify the Headings}
+% Headings, or heads, are organizational devices that guide the reader through 
+% your paper. There are two types: component heads and text heads.
+
+% Component heads identify the different components of your paper and are not 
+% topically subordinate to each other. Examples include Acknowledgments and 
+% References and, for these, the correct style to use is ``Heading 5''. Use 
+% ``figure caption'' for your Figure captions, and ``table head'' for your 
+% table title. Run-in heads, such as ``Abstract'', will require you to apply a 
+% style (in this case, italic) in addition to the style provided by the drop 
+% down menu to differentiate the head from the text.
+
+% Text heads organize the topics on a relational, hierarchical basis. For 
+% example, the paper title is the primary text head because all subsequent 
+% material relates and elaborates on this one topic. If there are two or more 
+% sub-topics, the next level head (uppercase Roman numerals) should be used 
+% and, conversely, if there are not at least two sub-topics, then no subheads 
+% should be introduced.
+
+% \subsection{Figures and Tables}
+% \paragraph{Positioning Figures and Tables} Place figures and tables at the top and 
+% bottom of columns. Avoid placing them in the middle of columns. Large 
+% figures and tables may span across both columns. Figure captions should be 
+% below the figures; table heads should appear above the tables. Insert 
+% figures and tables after they are cited in the text. Use the abbreviation 
+% ``Fig.~\ref{fig}'', even at the beginning of a sentence.
+
+% \begin{table}[htbp]
+% \caption{Table Type Styles}
+% \begin{center}
+% \begin{tabular}{|c|c|c|c|}
+% \hline
+% \textbf{Table}&\multicolumn{3}{|c|}{\textbf{Table Column Head}} \\
+% \cline{2-4} 
+% \textbf{Head} & \textbf{\textit{Table column subhead}}& \textbf{\textit{Subhead}}& \textbf{\textit{Subhead}} \\
+% \hline
+% copy& More table copy$^{\mathrm{a}}$& &  \\
+% \hline
+% \multicolumn{4}{l}{$^{\mathrm{a}}$Sample of a Table footnote.}
+% \end{tabular}
+% \label{tab1}
+% \end{center}
+% \end{table}
+
+% \begin{figure}[htbp]
+% \centerline{\includegraphics{fig1.png}}
+% \caption{Example of a figure caption.}
+% \label{fig}
+% \end{figure}
+
+% Figure Labels: Use 8 point Times New Roman for Figure labels. Use words 
+% rather than symbols or abbreviations when writing Figure axis labels to 
+% avoid confusing the reader. As an example, write the quantity 
+% ``Magnetization'', or ``Magnetization, M'', not just ``M''. If including 
+% units in the label, present them within parentheses. Do not label axes only 
+% with units. In the example, write ``Magnetization (A/m)'' or ``Magnetization 
+% \{A[m(1)]\}'', not just ``A/m''. Do not label axes with a ratio of 
+% quantities and units. For example, write ``Temperature (K)'', not 
+% ``Temperature/K''.
+
+% \section*{Acknowledgment}
+
+% The preferred spelling of the word ``acknowledgment'' in America is without 
+% an ``e'' after the ``g''. Avoid the stilted expression ``one of us (R. B. 
+% G.) thanks $\ldots$''. Instead, try ``R. B. G. thanks$\ldots$''. Put sponsor 
+% acknowledgments in the unnumbered footnote on the first page.
+
+% \section*{References}
+% Please number citations consecutively within brackets \cite{b1}. The 
+% sentence punctuation follows the bracket \cite{b2}. Refer simply to the reference 
+% number, as in \cite{b3}---do not use ``Ref. \cite{b3}'' or ``reference \cite{b3}'' except at 
+% the beginning of a sentence: ``Reference \cite{b3} was the first $\ldots$''
+
+% Number footnotes separately in superscripts. Place the actual footnote at 
+% the bottom of the column in which it was cited. Do not put footnotes in the 
+% abstract or reference list. Use letters for table footnotes.
+
+% Unless there are six authors or more give all authors' names; do not use 
+% ``et al.''. Papers that have not been published, even if they have been 
+% submitted for publication, should be cited as ``unpublished'' \cite{b4}. Papers 
+% that have been accepted for publication should be cited as ``in press'' \cite{b5}. 
+% Capitalize only the first word in a paper title, except for proper nouns and 
+% element symbols.
+
+% For papers published in translation journals, please give the English 
+% citation first, followed by the original foreign-language citation \cite{b6}.
 
 % \begin{thebibliography}{00}
 % \bibitem{b1} G. Eason, B. Noble, and I. N. Sneddon, ``On certain integrals of Lipschitz-Hankel type involving products of Bessel functions,'' Phil. Trans. Roy. Soc. London, vol. A247, pp. 529--551, April 1955.
@@ -558,10 +805,10 @@ citation first, followed by the original foreign-language citation \cite{b6}.
 % \bibitem{b6} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ``Electron spectroscopy studies on magneto-optical media and plastic substrate interface,'' IEEE Transl. J. Magn. Japan, vol. 2, pp. 740--741, August 1987 [Digests 9th Annual Conf. Magnetics Japan, p. 301, 1982].
 % \bibitem{b7} M. Young, The Technical Writer's Handbook. Mill Valley, CA: University Science, 1989.
 % \end{thebibliography}
-\bibliographystyle{IEEEtran}
-\bibliography{IEEEabrv,references}
-\vspace{12pt}
-\color{red}
-IEEE conference templates contain guidance text for composing and formatting conference papers. Please ensure that all template text is removed from your conference paper prior to submission to the conference. Failure to remove the template text from your paper may result in your paper not being published.
 
-\end{document}
+% IEEE conference templates contain guidance text for composing and formatting conference papers. 
+% Please ensure that all template text is removed from your conference paper prior to submission to 
+% the conference. Failure to remove the template text from your paper may result in your paper not 
+% being published.
+
+

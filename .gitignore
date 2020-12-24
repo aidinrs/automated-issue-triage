@@ -11,3 +11,13 @@ node_modules
 /sql
 /labels
 /steps.md
+
+report/__latexindent_temp.tex
+report/report-old.tex
+report/report.aux
+report/report.bbl
+report/report.blg
+report/report.fdb_latexmk
+report/report.fls
+report/report.log
+report/report.synctex.gz
