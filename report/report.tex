@@ -57,7 +57,7 @@ arast040@uottawa.ca}
 With the prevalence of open source software, authors of projects kindly carry on 
 the responsibility of supporting users and providing documentation. The relation 
 between users and authors is a two-way relation, developers rely on feedback and reports from 
-users to improve their software. These feedback reports come in the form of bug reports, questions, 
+users to improve their software. These feedback reports come in the form of bugs, questions, 
 features, suggestions, and enhancements, or what we technically call "issue"s. Most developers
 prefer to use the issue tracking software just as a means for developing the software, it is preferred 
 that questions related to the workings or documentation of the software be directed to forums or QA
@@ -103,7 +103,7 @@ We have used a previously available dataset of GitHub issues provided by \cite{8
 Cleaning and pre-processing the dataset narrowed down the count of our available 
 records to 102,198. The pre-processing part was the hardest part of our implementation
 since the text of issues usually contain machine-generated texts like logs and stack traces. 
-After extracting the text part of issues, we have used state of the art sentence embedding techniques
+After extracting the text part of issues, we have used state-of-the-art sentence embedding techniques
 to convert text data to numerical vectors. By evaluating several classification 
 algorithms, we achieved the best result with the Logistic Regression algorithm.
 
@@ -146,9 +146,9 @@ In summary, our approach involves three main phases:
   command lines, environment variables, configurations, IP addresses, identifiers, flags, timestamps, etc.
   We have also applied the standard NLP pre-processing tasks such as tokenization and removing punctuations.
   \item The second phase is computing a sentence embedding of each text document provided by 
-  the previous step. We have used the Sentence Bert \cite{reimers-2019-sentence-bert} technique to convert our
-  documents to a high dimensional vector representation. The Sentence Bert is one the 
-  best performing sentence embedding techniques according to benchmarks \cite{reimers-2019-sentence-bert}.
+  the previous step. We have used two state-of-the-art sentence embedding algorithms to convert our
+  documents to a high dimensional vector representation. These embedding algorithms have shown a high 
+  level of performance for several tasks \cite{reimers-2019-sentence-bert}.
   \item The final phase is training a classifier on the extracted features. We have evaluated
   the performance of SVM, Decision Tree (C4.5), Logistic Regression, Random Forest, and k-NN 
   classification algorithms.
@@ -164,10 +164,10 @@ The labels of each issue, which were applied by the project maintainers, are als
 
 With a simple query, we extracted frequently applied labels. You 
 can see the count of the top 10 labels in Table \ref{tab:labels}. 
-We have selected these top labels, \verb|bug|, \verb|duplicate|, \verb|enhancement|, \verb|wontfix|,
+We have selected these top labels: \verb|bug|, \verb|duplicate|, \verb|enhancement|, \verb|wontfix|,
 \verb|feature|, \verb|improvement|, and \verb|question| to find more labels based on them.
 For example, some projects may use the label "type: bug" to represent a bug. Also, many of the issues 
-have more than one label. The labels are stored in the database as string in a comma-separated format. 
+have more than one label. The labels are stored in the database as a string in a comma-separated format. 
 For example, an issue with both labels of bug and duplicate is stored as ``bug,duplicate". 
 For each of these base labels, we queried issues that contained their strings. For example,
 for features, we looked for labels that contained the string ``feature". We also queried their usage count and
@@ -230,9 +230,10 @@ Markdown to HTML. Following compiling issues to HTML we extracted the text part 
 Also, during the translation to HTML, we removed image, table, code, pre, and header tags. If the
 author of an issue had used the Markdown properly then after removing these tags only the text part
 of an issue would have remained. However, many developers do not submit issues in the proper format and we
-still have to further clean texts. 
+still had to further clean texts. 
 
-We applied more than 400 regular expressions to remove the remaining noise from the text of issues. Specifically,
+Next we concatenated the title and body of issues then applied more than 400 regular expressions 
+to remove the remaining noise from the text of issues. Specifically,
 we have removed dependency trees, emojis, code snippets, comments, logs,
 error message, stack traces, timestamp, date times, command lines, environment variables, identifiers,
 HTML, markup tags, module versions, IP addresses, emails, GitHub user handles, URIs, file paths, and digits.
@@ -245,21 +246,21 @@ By manually analyzing our regular expression for stack traces we identified thou
 of occurrences. As another example, suppose we want to remove log lines. Many developers copy logs or debug
 output of the software to help diagnose the problem. Almost all of the logs contain a timestamp on
 each line, therefore, if we see several consecutive lines that contain timestamps, there is 
-a high probability that they are software generated log outputs.
+a high probability that these lines are software generated log outputs.
 
 By manually applying our regular expressions and inspecting dozens of results we have fine tuned 
 them to not catch incorrect patterns. Of course, these regular expressions are not perfect and there are 
 still a handful of incorrect matches in a large dataset, but given that they can match hundreds of correct patterns, 
 we opted to apply them to remove noise from the text of issues. We have also removed several punctuations except 
-those that indicated the end of a sentence (such as .,;!?). The whole list of all used regular expressions and the subscript
-is available in the code repository.
+those that indicated the end of a sentence (such as .,;!?). The list of all used regular expressions 
+and the script is available in the code repository.
 
 The next step of pre-processing was filtering issues that were not in the English language. We used 
 the \verb|langdetect| \cite{web:langdetect} library to determine the language of each issue 
 and then filter the ones that were not English.
 
-After cleaning the dataset we concatenated the title and body of issues then we used the nltk library for 
-tokenization. We used its default tokenizer which is \verb|TreebankWordTokenizer|. Following 
+Finally, we used the nltk library for tokenization. We used its default tokenizer
+which is \verb|TreebankWordTokenizer|. Following 
 tokenization, we marked issues that had more than five and lower than 200 tokens for training. 
 This reduced the records of the \verb|question| category 
 to 42,198 and the \verb|not-question| category to 262,425. Also, for the \verb|question| category we only selected
@@ -282,7 +283,7 @@ Word embeddings give us a numerical vector for each word. Sentence embeddings ar
 the word embeddings technique. Sentence embeddings are vector representations of a sentence, paragraph, 
 or even a whole text document. One naive way of calculating the sentence embeddings of a text or sentence 
 is to average its word embeddings, however, this method does not perform well for NLP tasks. 
-Sentence-BERT \cite{reimers-2019-sentence-bert} is a state of the art 
+Sentence-BERT \cite{reimers-2019-sentence-bert} is a state-of-the-art 
 algorithm to derive sentence embeddings. Sentence-BERT builds on top of the BERT \cite{devlin2019bert} networks 
 to calculate meaningful sentence embeddings. Another algorithm to calculate sentence embeddings is 
 Universal Sentence Encoder \cite{cer2018universal}. Vectors generated by both of the two mentioned sentence
@@ -297,14 +298,14 @@ This model generates 1024 dimension vectors. We used the
 \verb|universal-sentence-encoder-large-v5| pre-trained model of Universal Sentence Encoder algorithm. This model generates 
 512 dimension vectors. This model is trained over a variety of unsupervised data sources from the web. They used data
 from Wikipedia and question-answer websites. The resulting labeled vectors of both of these embeddings 
-are available in our code repository.
+are provided in a \textit{csv} file.
 
 \subsection{Training classifiers}
 After extracting feature vectors we now have a dataset ready to train classification models. We have two datasets,
 one generated from Universal Sentence Encoder and one generated from Sentence-BERT. The Universal Sentence Encoder
 records have 512 dimensions while the Sentence-BERT ones have 1024 dimensions. We used the Weka UI toolkit 
 \cite{10.1145/1656274.1656278} to train classifiers. We have trained classifiers using Logistic Regression, 
-Decision Tree (C4.5), Random Forest, and Support Vector Machine. In this section, we briefly review each of the 
+Decision Tree (C4.5), Random Forest, Support Vector Machine, and K-NN. In this section, we briefly review each of the 
 classification algorithms.
 \begin{itemize}
   \item\textbf{Logistic Regression:}: Logistic Regression can be used for binary classification. Instead of 
@@ -465,7 +466,7 @@ Random Forest. It may be more sensible to use these two instead of the Logistic 
 
 \begin{figure*}[t]
   \centerline{\includegraphics[width=7.16in]{./figures/cf-heatmaps8.png}}
-  \caption{Heat map of confusion matrix of trained models over both sentence embedding techniques.}
+  \caption{Confusion matrix of trained models over both sentence embedding techniques.}
   \label{fig:cfheatmap}
 \end{figure*}
 
@@ -483,8 +484,8 @@ We noticed that the bottleneck in the accuracy of almost all of the classifiers 
 actually questions. They can label issues that are not questions with good accuracy. This problem can be attributed 
 to the fact that many of the submitted questions in issues trackers will be converted to another type of issue by 
 the maintainers. For example, a submitted question about a feature may interest developers and they decide to 
-implement it, thus they will apply a ``feature'' label to the issue which is asking a question. 
-The same happens with other labels such as ``bug'' too, a submitted question about an error 
+implement it, thus they will remove the ``question'' label and apply a ``feature'' label to the issue which is 
+asking a question. The same happens with other labels such as ``bug'' too, a submitted question about an error 
 may in fact turn out to be a bug. Since our dataset is not manually labeled for the purpose of our task and we 
 depend on the labels provided by authors of projects this problem can't be addressed trivially. 
 Manually labeling issues may help address this problem but it is time consuming. Another approach may be to analyze 
