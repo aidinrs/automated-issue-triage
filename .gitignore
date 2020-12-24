@@ -6,11 +6,6 @@ node_modules
 .env
 
 /dataset
-/test
-/test.txt
-/sql
-/labels
-/steps.md
 
 report/__latexindent_temp.tex
 report/report-old.tex
@@ -21,3 +16,6 @@ report/report.fdb_latexmk
 report/report.fls
 report/report.log
 report/report.synctex.gz
+
+concat.js
+clean_labels.py

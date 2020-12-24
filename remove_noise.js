@@ -631,17 +631,6 @@ const regs = [
   
 ]
 
-// let a = [
-// "org.opensolaris.opengrok.index.IndexDatabase.indexDown(IndexDatabase.java:561)",
-// 7- replace plugin/kubernetes like phrases with token -> NAME_SPACE
-// 9- replace nopods:true and "nopods: true" like phrases to token -> CONFIG
-// 12- replace sync_error_idc with token -> identifier
-// 14- should replace functoin calls ? build_connect_url() -> FUNCTION_CALL
-// 16- replace LoginByUsername or loginByUsernameunit (camel case) -> IDENTIFIER
-// COMMAND
-// duplicate words \b([A-Z]{3,})\s+\1\b
-// ]
-
 async function cleanDataset(pg) {
   for (let i = 0; i < 1; i++) {
     const rows = await pg.issues.find(
@@ -681,14 +670,14 @@ async function cleanDataset(pg) {
           { cleaned_text_body: cleanedBody }
         )
 
-        appendFileSync(
-          `./dataset/cleaned.txt`,
-          `${row.id}
-${row.text_body}
-YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
-${cleanedBody}
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-`)
+//         appendFileSync(
+//           `./dataset/cleaned.txt`,
+//           `${row.id}
+// ${row.text_body}
+// YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+// ${cleanedBody}
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// `)
       } catch (err) {
         console.log(`failed at ${row.id}`)
         console.log(err)

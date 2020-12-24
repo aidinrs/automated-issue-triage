@@ -19,7 +19,7 @@ def get_word_vector(word):
 
 
 cur.execute(
-    f'SELECT * from issues where tokens is not null and question is false ORDER BY random() limit 5000')
+    f'SELECT * from issues where tokens is not null and question is false ORDER BY random()')
 rows = cur.fetchall()
 file = open("./dataset/all/nq_vectors.txt", "a")
 missingsFile = open("./dataset/all/missing_words.txt", "a")

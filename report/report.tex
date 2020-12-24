@@ -168,7 +168,7 @@ The label of each issue, which are applied by the project maintainers, is also a
 
 With a simple query we extracted frequently applied labels. you 
 can see the count of the top 10 labels in Table \ref{tab:labels}. 
-We have selected these top labels, \verb|bug|, \verb|duplicate|, \verb|enhancement|,
+We have selected these top labels, \verb|bug|, \verb|duplicate|, \verb|enhancement|, \verb|wontfix|,
 \verb|feature|, \verb|improvement|, and \verb|question| to find more labels based on them.
 For example, some projects may use the label "type: bug" to represent a bug. Also, many of the issues 
 have more than one label. The labels are stored in the database as string in a comma separated format. 
@@ -182,7 +182,7 @@ A label with a higher usage indicates that it is a relevant label for the intend
 in thousands of records for each of the base labels, however, many of them were only applied
 a handful of times. Therefore we have only selected labels from these lists that 
 at least were used 50 times. For our classifier we have two categories of \verb|not-question| 
-and \verb|question|. We used the base labels \verb|bug|, \verb|duplicate|, \verb|enhancement|,
+and \verb|question|. We used the base labels \verb|bug|, \verb|duplicate|, \verb|enhancement|, \verb|wontfix|,
 \verb|feature|, \verb|improvement|, and their similar labels for the \verb|not-question| category. We used
 the \verb|question| or similar labels for the \verb|question| category. Given that many issues have 
 more than one label, we removed issues that had labels like ``bug,question'' or ``support,bug'' from 

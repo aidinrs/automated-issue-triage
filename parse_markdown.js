@@ -22,16 +22,16 @@ marked.setOptions({
   headerIds: false,
 })
 
-async function selectAllByLebel(pg) {
+async function selectAllByLabel(pg) {
   console.log(`selectAllByLabel`)
   const tags = [
-    // ...require("./labels/bug.json"),
-    // ...require("./labels/duplicate.json"),
-    // ...require("./labels/enhancement.json"),
-    // ...require("./labels/feature.json"),
-    // ...require("./labels/improvement.json"),
-    // ...require("./labels/wontfix.json"),
-    ...require("./labels/question.json"),
+    ...require("./labels/used_bug.json"),
+    ...require("./labels/used_duplicate.json"),
+    ...require("./labels/used_enhancement.json"),
+    ...require("./labels/used_feature.json"),
+    ...require("./labels/used_improvement.json"),
+    ...require("./labels/used_wontfix.json"),
+    ...require("./labels/used_question.json"),
   ]
 
   console.log(tags.length)
@@ -42,37 +42,6 @@ async function selectAllByLebel(pg) {
     },
     { question: true }
   )
-}
-
-function getMarkdownText() {
-  //   writeFileSync(
-  //     `./test/test.html`,
-  //     marked(`hi
-  // *bold*
-  // **bold**
-  // ***bold***
-  // ~~bold~~
-  // >  said hee that
-  // thoug sahll not
-  // 1. asdna
-  // 2. sdlks
-  // 3. sdklcm asc
-  // run:
-  // \`npm install mocha\`
-  // then do:
-  // [link](http://google.com)
-  // tasks:
-  // - [x] Finish my changes
-  // - [ ] Push my commits to GitHub
-  // - [ ] Open a pull request
-  //   `)
-  //   )
-  // writeFileSync(
-  //   `./test/test2.html`,
-  //   marked(
-  //     `hi"What type of report is this:\n\n| Q  | A\n| ---| ---\n| Bug report? | \n| Feature request? |  Y\n| Enhancement? | \n\n## Description:\nAdd multiple email templates (e.g. a transactional template and a newsletter-style template)`
-  //   )
-  // )
 }
 
 async function writeRawDataset(pg) {
@@ -137,8 +106,6 @@ async function main() {
     password: "root",
   })
 
-  // await selectAllByLebel(pg)
-  // getMarkdownText()
   await writeRawDataset(pg)
 
   console.log("finish")
