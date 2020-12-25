@@ -11,7 +11,7 @@
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
 
-\title{Labeling Questions Asked On GitHub Issue Trackers\\
+\title{Labeling Questions On GitHub Issue Trackers\\
 % {\footnotesize \textsuperscript{*}Note: Sub-titles are not captured in Xplore and should not be used}
 % \thanks{Identify applicable funding agency here. If none, delete this.}
 }
@@ -64,7 +64,7 @@ that questions related to the workings or documentation of the software be direc
 websites. And by questions we mean everything that is, asking about how to fix an error/problem, 
 asking about features and documentation, asking for help, etc.
 
-These unrelated questions only add to the clutter of issues trackers, especially in bigger projects.
+These unrelated questions only add to the clutter of issue trackers, especially in bigger projects.
 Developers have to put a tremendous amount of effort to triage or close issues. Providing a 
 simple automated tool to detect potential unrelated questions can help project managers 
 and software developers to focus on more practical issues.
@@ -482,7 +482,7 @@ Logistic Regression classifier.
 
 We noticed that the bottleneck in the accuracy of almost all of the classifiers is categorizing issues that are 
 actually questions. They can label issues that are not questions with good accuracy. This problem can be attributed 
-to the fact that many of the submitted questions in issues trackers will be converted to another type of issue by 
+to the fact that many of the submitted questions in issue trackers will be converted to another type of issue by 
 the maintainers. For example, a submitted question about a feature may interest developers and they decide to 
 implement it, thus they will remove the ``question'' label and apply a ``feature'' label to the issue which is 
 asking a question. The same happens with other labels such as ``bug'' too, a submitted question about an error 
@@ -545,7 +545,7 @@ To prepare our textual data for machine learning algorithms, we used two of stat
 techniques, Sentence-BERT and Universal Sentence Encoder, to extract numerical feature vectors. Finally, we 
 trained classifiers over our dataset with five famous classification algorithms. The best result was yielded
 with the Logistic Regression algorithm trained over Universal Sentence Encoder embeddings with the accuracy
-rate of 81.68\%. Overall, we conclude that it is possible to classify questions submitted to a public issues tracker
+rate of 81.68\%. Overall, we conclude that it is possible to classify questions submitted to a public issue tracker
 with a good probability. 
 
 \bibliographystyle{IEEEtran}
