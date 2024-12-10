@@ -8,4 +8,4 @@ I developed dozens of regular expressions to normalize the input from issues sub
 these repostitoreis and calcualte BERT embeddings of them. Several classifiers using for
 various Machine Learning algorthims  were trained by these embeddings.
 
-Paper link: http://dx.doi.org/10.13140/RG.2.2.32323.48164
+Paper link: [https://arxiv.org/abs/2412.04523](https://arxiv.org/abs/2412.04523)
